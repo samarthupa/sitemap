@@ -1,6 +1,5 @@
 import streamlit as st
 import requests
-from bs4 import BeautifulSoup
 
 # Function to check status code and redirection of URL
 def check_status_and_redirection(url):
@@ -15,26 +14,12 @@ def check_status_and_redirection(url):
     except Exception as e:
         return str(e), "N/A"
 
-# Function to extract text using XPath
-def extract_text(url, xpath):
-    try:
-        response = requests.get(url)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        elements = soup.select(xpath)
-        if elements:
-            return elements[0].text.strip()
-        else:
-            return "N/A"
-    except:
-        return "N/A"
-
 # Streamlit UI
 st.title("URL Analysis Tool")
 
 # Input fields
 urls = st.text_area("Enter URL(s) (one URL per line)", height=150)
 user_agents = st.selectbox("Choose User Agent", ["Chrome", "Firefox", "Safari"])
-xpath = st.text_input("Enter XPath to Extract Text")
 
 if st.button("Submit"):
     urls_list = urls.split('\n')
@@ -42,8 +27,7 @@ if st.button("Submit"):
     for url in urls_list:
         headers = {"User-Agent": user_agents}
         status_code, redirection_url = check_status_and_redirection(url)
-        extracted_text = extract_text(url, xpath) if xpath else "N/A"
-        results.append((url, status_code, redirection_url, extracted_text))
+        results.append((url, status_code, redirection_url))
     
     # Display results in table
     st.table(results)
