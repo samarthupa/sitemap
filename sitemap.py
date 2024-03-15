@@ -43,17 +43,13 @@ country = st.selectbox("Choose Country", ["None", "USA", "UK", "Germany", "Austr
 if st.button("Submit"):
     urls_list = urls.split('\n')
     results = []
-    max_redirections = 0
     for url in urls_list:
-        headers = {"User-Agent": user_agents}
         status_code, redirection_urls = check_status_and_redirection(url, country)
-        max_redirections = max(max_redirections, len(redirection_urls))
-        results.append((url, status_code, *redirection_urls))
+        if redirection_urls:
+            redirection_urls_str = ' -> '.join(redirection_urls)
+        else:
+            redirection_urls_str = "N/A"
+        results.append((url, status_code, redirection_urls_str))
     
-    # Prepare column headers
-    headers = ['URL', 'Status Code']
-    for i in range(max_redirections):
-        headers.append(f'Redirection URL {i+1}')
-
     # Display results in table
-    st.table([headers] + results)
+    st.table(results)
