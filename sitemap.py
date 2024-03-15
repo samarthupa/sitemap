@@ -1,5 +1,7 @@
 import streamlit as st
 import requests
+import csv
+from io import StringIO
 
 # Function to check status code and redirection of URL
 def check_status_and_redirection(url):
@@ -38,4 +40,13 @@ if st.button("Submit"):
         headers.append(f'Redirection URL {i+1}')
 
     # Display results in table
-    st.table([headers] + results)
+    table = st.table([headers] + results)
+
+# Download button for CSV
+if results:
+    csv_data = StringIO()
+    csv_writer = csv.writer(csv_data)
+    csv_writer.writerows([headers] + results)
+
+    csv_download_link = f'<a href="data:file/csv;base64,{csv_data.getvalue().encode().hex()}" download="url_analysis_results.csv">Download CSV</a>'
+    st.sidebar.markdown(csv_download_link, unsafe_allow_html=True)
