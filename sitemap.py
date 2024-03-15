@@ -18,7 +18,9 @@ def check_status_and_redirection(url):
                     redirection_urls.append(redirection_url)
                 else:
                     break
-            return status_code, "<br>".join(redirection_urls)
+            # Join redirection URLs with line breaks
+            redirection_urls = "\n".join(redirection_urls)
+            return status_code, redirection_urls
         else:
             return status_code, "N/A"
     except Exception as e:
@@ -37,6 +39,8 @@ if st.button("Submit"):
     for url in urls_list:
         headers = {"User-Agent": user_agents}
         status_code, redirection_urls = check_status_and_redirection(url)
+        # Convert redirection URLs to Markdown format for line breaks
+        redirection_urls = redirection_urls.replace("\n", "  \n")  # Add two spaces before newline for Markdown line break
         results.append((url, status_code, redirection_urls))
     
     # Display results in table
