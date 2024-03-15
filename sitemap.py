@@ -1,75 +1,70 @@
 import streamlit as st
 import requests
-from lxml import html
+from bs4 import BeautifulSoup
 
-# Function to fetch data based on user input
-def fetch_data(url, user_agent, options, xpath):
-    results = {}
-    
-    # Set user agent
-    headers = {'User-Agent': user_agent}
-    
-    # Fetch page content
-    response = requests.get(url, headers=headers)
-    
-    # Check status code
-    if 'Check Status Code' in options:
-        results['Status Code'] = response.status_code
-    
-    # Check redirection
-    if 'Check Redirection' in options:
-        results['Redirection'] = response.history
-    
-    # Check indexibility
-    if 'Check Indexibility' in options:
-        # Add indexibility check logic here
-        results['Indexibility'] = 'To be implemented'
-    
-    # Extract text using XPath
-    if 'Extract Text' in options and xpath:
-        tree = html.fromstring(response.content)
-        extracted_text = tree.xpath(xpath)
-        results['Extracted Text'] = extracted_text
-    
-    return results
+# Function to check status code of URL
+def check_status_code(url):
+    try:
+        response = requests.get(url)
+        return response.status_code
+    except:
+        return "N/A"
 
-# Main function to run the Streamlit app
-def main():
-    st.title("URL Checker")
-    
-    # User input section
-    st.header("Enter URLs")
-    urls = st.text_area("Enter URLs (one per line)")
-    
-    user_agents = [
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
-        "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36"
-    ]
-    user_agent = st.selectbox("Choose User Agent", user_agents)
-    
-    options = st.multiselect("Select Options", ["Check Status Code", "Check Redirection", "Check Indexibility", "Extract Text"])
-    
-    xpath = ""
-    if 'Extract Text' in options:
-        xpath = st.text_input("Enter XPath to Extract Text")
-    
-    if st.button("Submit"):
-        urls_list = urls.split("\n")
-        results = []
-        
-        # Iterate over each URL and fetch data
-        for url in urls_list:
-            if url.strip() != "":
-                data = fetch_data(url.strip(), user_agent, options, xpath)
-                results.append(data)
-        
-        # Display results in a table
-        st.header("Results")
-        for i, result in enumerate(results):
-            st.subheader(f"URL {i+1}")
-            st.table(result)
+# Function to check redirection of URL
+def check_redirection(url):
+    try:
+        response = requests.get(url)
+        return response.history
+    except:
+        return "N/A"
 
-if __name__ == "__main__":
-    main()
+# Function to check indexibility of URL
+def check_indexibility(url):
+    try:
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        meta_tags = soup.find_all('meta')
+        for tag in meta_tags:
+            if 'name' in tag.attrs and tag.attrs['name'].lower() == 'robots':
+                return tag.attrs['content']
+        return "N/A"
+    except:
+        return "N/A"
+
+# Function to extract text using XPath
+def extract_text(url, xpath):
+    try:
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        elements = soup.select(xpath)
+        if elements:
+            return elements[0].text.strip()
+        else:
+            return "N/A"
+    except:
+        return "N/A"
+
+# Streamlit UI
+st.title("URL Analysis Tool")
+
+# Input fields
+urls = st.text_area("Enter URL(s) (one URL per line)", height=150)
+user_agents = st.selectbox("Choose User Agent", ["Chrome", "Firefox", "Safari"])
+check_status = st.checkbox("Check Status Code")
+check_redirection = st.checkbox("Check Redirection")
+check_indexibility = st.checkbox("Check Indexibility")
+xpath = st.text_input("Enter XPath to Extract Text")
+
+if st.button("Submit"):
+    urls_list = urls.split('\n')
+    results = []
+    for url in urls_list:
+        headers = {"User-Agent": user_agents}
+        status_code = check_status_code(url) if check_status else "N/A"
+        redirection = check_redirection(url) if check_redirection else "N/A"
+        indexibility = check_indexibility(url) if check_indexibility else "N/A"
+        extracted_text = extract_text(url, xpath) if xpath else "N/A"
+        results.append((url, status_code, redirection, indexibility, extracted_text))
+    
+    # Display results in table
+    st.table(results)
