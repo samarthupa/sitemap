@@ -2,21 +2,18 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 
-# Function to check status code of URL
-def check_status_code(url):
+# Function to check status code and redirection of URL
+def check_status_and_redirection(url):
     try:
-        response = requests.get(url)
-        return response.status_code
+        response = requests.get(url, allow_redirects=False)
+        status_code = response.status_code
+        redirection_url = response.headers.get('location')
+        if status_code in [301, 307, 302] and redirection_url:
+            return status_code, redirection_url
+        else:
+            return status_code, "N/A"
     except Exception as e:
-        return str(e)
-
-# Function to check redirection of URL
-def check_redirection(url):
-    try:
-        response = requests.get(url)
-        return response.history
-    except:
-        return "N/A"
+        return str(e), "N/A"
 
 # Function to extract text using XPath
 def extract_text(url, xpath):
@@ -37,8 +34,6 @@ st.title("URL Analysis Tool")
 # Input fields
 urls = st.text_area("Enter URL(s) (one URL per line)", height=150)
 user_agents = st.selectbox("Choose User Agent", ["Chrome", "Firefox", "Safari"])
-check_status = st.checkbox("Check Status Code")
-check_redirection = st.checkbox("Check Redirection")
 xpath = st.text_input("Enter XPath to Extract Text")
 
 if st.button("Submit"):
@@ -46,10 +41,9 @@ if st.button("Submit"):
     results = []
     for url in urls_list:
         headers = {"User-Agent": user_agents}
-        status_code = check_status_code(url) if check_status else "N/A"
-        redirection = check_redirection(url) if check_redirection else "N/A"
+        status_code, redirection_url = check_status_and_redirection(url)
         extracted_text = extract_text(url, xpath) if xpath else "N/A"
-        results.append((url, status_code, redirection, extracted_text))
+        results.append((url, status_code, redirection_url, extracted_text))
     
     # Display results in table
     st.table(results)
