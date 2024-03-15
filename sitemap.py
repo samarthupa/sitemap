@@ -2,20 +2,21 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 
-# Function to check status code and handle redirection
-def check_status_and_redirection(url):
+# Function to check status code of URL
+def check_status_code(url):
     try:
         response = requests.get(url)
-        status_code = response.status_code
-        if status_code == 200:
-            redirection = "No Redirection"
-        elif status_code in [301, 302, 307]:
-            redirection = response.headers['Location']
-        else:
-            redirection = "N/A"
-        return status_code, redirection
+        return response.status_code
     except:
-        return "N/A", "N/A"
+        return "N/A"
+
+# Function to check redirection of URL
+def check_redirection(url):
+    try:
+        response = requests.get(url)
+        return response.history
+    except:
+        return "N/A"
 
 # Function to extract text using XPath
 def extract_text(url, xpath):
@@ -38,7 +39,6 @@ urls = st.text_area("Enter URL(s) (one URL per line)", height=150)
 user_agents = st.selectbox("Choose User Agent", ["Chrome", "Firefox", "Safari"])
 check_status = st.checkbox("Check Status Code")
 check_redirection = st.checkbox("Check Redirection")
-check_extraction = st.checkbox("Extract Text using XPath")
 xpath = st.text_input("Enter XPath to Extract Text")
 
 if st.button("Submit"):
@@ -46,9 +46,10 @@ if st.button("Submit"):
     results = []
     for url in urls_list:
         headers = {"User-Agent": user_agents}
-        status, redirection = check_status_and_redirection(url) if check_redirection else ("N/A", "N/A")
-        extracted_text = extract_text(url, xpath) if check_extraction else "N/A"
-        results.append((url, status if check_status else "N/A", redirection if check_redirection else "N/A", extracted_text if check_extraction else "N/A"))
+        status_code = check_status_code(url) if check_status else "N/A"
+        redirection = check_redirection(url) if check_redirection else "N/A"
+        extracted_text = extract_text(url, xpath) if xpath else "N/A"
+        results.append((url, status_code, redirection, extracted_text))
     
     # Display results in table
     st.table(results)
