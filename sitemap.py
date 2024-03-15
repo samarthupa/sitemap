@@ -40,13 +40,16 @@ if st.button("Submit"):
         headers.append(f'Redirection URL {i+1}')
 
     # Display results in table
-    table = st.table([headers] + results)
+    st.table([headers] + results)
 
-# Download button for CSV
-if results:
+    # Download button for CSV
     csv_data = StringIO()
     csv_writer = csv.writer(csv_data)
     csv_writer.writerows([headers] + results)
-
-    csv_download_link = f'<a href="data:file/csv;base64,{csv_data.getvalue().encode().hex()}" download="url_analysis_results.csv">Download CSV</a>'
-    st.sidebar.markdown(csv_download_link, unsafe_allow_html=True)
+    csv_text = csv_data.getvalue()
+    st.download_button(
+        label="Download CSV",
+        data=csv_text,
+        file_name="url_analysis_results.csv",
+        mime="text/csv"
+    )
