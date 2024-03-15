@@ -8,12 +8,14 @@ from urllib.parse import urlparse
 # Function to extract URLs from a sitemap
 def extract_urls_from_sitemap(sitemap_url):
     try:
-        response = requests.get(sitemap_url)
-        soup = BeautifulSoup(response.text, 'html.parser')  # Use html.parser instead of xml
+        response = requests.get(sitemap_url, timeout=10)  # Set timeout value (in seconds)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        soup = BeautifulSoup(response.text, 'html.parser')
         urls = soup.find_all('loc')
         return [url.text for url in urls]
-    except Exception as e:
+    except requests.exceptions.RequestException as e:
         st.error(f"Error occurred: {str(e)}")
+
 
 
 # Function to parse and extract domain from URL
