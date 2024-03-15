@@ -38,6 +38,7 @@ urls = st.text_area("Enter URL(s) (one URL per line)", height=150)
 user_agents = st.selectbox("Choose User Agent", ["Chrome", "Firefox", "Safari"])
 check_status = st.checkbox("Check Status Code")
 check_redirection = st.checkbox("Check Redirection")
+check_extraction = st.checkbox("Extract Text using XPath")
 xpath = st.text_input("Enter XPath to Extract Text")
 
 if st.button("Submit"):
@@ -46,8 +47,8 @@ if st.button("Submit"):
     for url in urls_list:
         headers = {"User-Agent": user_agents}
         status, redirection = check_status_and_redirection(url) if check_redirection else ("N/A", "N/A")
-        extracted_text = extract_text(url, xpath) if xpath else "N/A"
-        results.append((url, status, redirection, extracted_text))
+        extracted_text = extract_text(url, xpath) if check_extraction else "N/A"
+        results.append((url, status if check_status else "N/A", redirection if check_redirection else "N/A", extracted_text if check_extraction else "N/A"))
     
     # Display results in table
     st.table(results)
