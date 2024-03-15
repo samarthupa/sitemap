@@ -7,8 +7,8 @@ def check_status_code(url):
     try:
         response = requests.get(url)
         return response.status_code
-    except:
-        return "N/A"
+    except Exception as e:
+        return str(e)
 
 # Function to check redirection of URL
 def check_redirection(url):
