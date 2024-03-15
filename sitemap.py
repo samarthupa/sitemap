@@ -6,23 +6,12 @@ def check_status_and_redirection(url):
     try:
         response = requests.get(url, allow_redirects=False)
         status_code = response.status_code
-        redirection_url = response.headers.get('location')
-        if status_code in [301, 307, 302] and redirection_url:
-            # If there are multiple redirections, recursively follow them
-            redirection_urls = [redirection_url]
-            while True:
-                response = requests.get(redirection_url, allow_redirects=False)
-                status_code = response.status_code
-                redirection_url = response.headers.get('location')
-                if status_code in [301, 307, 302] and redirection_url:
-                    redirection_urls.append(redirection_url)
-                else:
-                    break
-            # Join redirection URLs with line breaks
-            redirection_urls = "\n".join(redirection_urls)
-            return status_code, redirection_urls
-        else:
-            return status_code, "N/A"
+        redirection_urls = []
+        if status_code in [301, 307, 302]:
+            while 'location' in response.headers:
+                redirection_urls.append(response.headers['location'])
+                response = requests.get(response.headers['location'], allow_redirects=False)
+        return status_code, redirection_urls
     except Exception as e:
         return str(e), "N/A"
 
@@ -36,12 +25,17 @@ user_agents = st.selectbox("Choose User Agent", ["Chrome", "Firefox", "Safari"])
 if st.button("Submit"):
     urls_list = urls.split('\n')
     results = []
+    max_redirections = 0
     for url in urls_list:
         headers = {"User-Agent": user_agents}
         status_code, redirection_urls = check_status_and_redirection(url)
-        # Convert redirection URLs to Markdown format for line breaks
-        redirection_urls = redirection_urls.replace("\n", "  \n")  # Add two spaces before newline for Markdown line break
-        results.append((url, status_code, redirection_urls))
+        max_redirections = max(max_redirections, len(redirection_urls))
+        results.append((url, status_code, *redirection_urls))
     
+    # Prepare column headers
+    headers = ['URL', 'Status Code']
+    for i in range(max_redirections):
+        headers.append(f'Redirection URL {i+1}')
+
     # Display results in table
-    st.table(results)
+    st.table([headers] + results)
