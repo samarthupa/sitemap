@@ -2,34 +2,20 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 
-# Function to check status code of URL
-def check_status_code(url):
+# Function to check status code and handle redirection
+def check_status_and_redirection(url):
     try:
         response = requests.get(url)
-        return response.status_code
+        status_code = response.status_code
+        if status_code == 200:
+            redirection = "No Redirection"
+        elif status_code in [301, 302, 307]:
+            redirection = response.headers['Location']
+        else:
+            redirection = "N/A"
+        return status_code, redirection
     except:
-        return "N/A"
-
-# Function to check redirection of URL
-def check_redirection(url):
-    try:
-        response = requests.get(url)
-        return response.history
-    except:
-        return "N/A"
-
-# Function to check indexibility of URL
-def check_indexibility(url):
-    try:
-        response = requests.get(url)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        meta_tags = soup.find_all('meta')
-        for tag in meta_tags:
-            if 'name' in tag.attrs and tag.attrs['name'].lower() == 'robots':
-                return tag.attrs['content']
-        return "N/A"
-    except:
-        return "N/A"
+        return "N/A", "N/A"
 
 # Function to extract text using XPath
 def extract_text(url, xpath):
@@ -52,7 +38,6 @@ urls = st.text_area("Enter URL(s) (one URL per line)", height=150)
 user_agents = st.selectbox("Choose User Agent", ["Chrome", "Firefox", "Safari"])
 check_status = st.checkbox("Check Status Code")
 check_redirection = st.checkbox("Check Redirection")
-check_indexibility = st.checkbox("Check Indexibility")
 xpath = st.text_input("Enter XPath to Extract Text")
 
 if st.button("Submit"):
@@ -60,11 +45,9 @@ if st.button("Submit"):
     results = []
     for url in urls_list:
         headers = {"User-Agent": user_agents}
-        status_code = check_status_code(url) if check_status else "N/A"
-        redirection = check_redirection(url) if check_redirection else "N/A"
-        indexibility = check_indexibility(url) if check_indexibility else "N/A"
+        status, redirection = check_status_and_redirection(url) if check_redirection else ("N/A", "N/A")
         extracted_text = extract_text(url, xpath) if xpath else "N/A"
-        results.append((url, status_code, redirection, indexibility, extracted_text))
+        results.append((url, status, redirection, extracted_text))
     
     # Display results in table
     st.table(results)
