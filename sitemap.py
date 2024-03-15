@@ -4,15 +4,17 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
+
 # Function to extract URLs from a sitemap
 def extract_urls_from_sitemap(sitemap_url):
     try:
         response = requests.get(sitemap_url)
-        soup = BeautifulSoup(response.text, 'xml')
+        soup = BeautifulSoup(response.text, 'html.parser')  # Use html.parser instead of xml
         urls = soup.find_all('loc')
         return [url.text for url in urls]
     except Exception as e:
         st.error(f"Error occurred: {str(e)}")
+
 
 # Function to parse and extract domain from URL
 def get_domain(url):
