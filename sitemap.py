@@ -18,7 +18,7 @@ def check_status_and_redirection(url):
                     redirection_urls.append(redirection_url)
                 else:
                     break
-            return status_code, redirection_urls
+            return status_code, "\n".join(redirection_urls)
         else:
             return status_code, "N/A"
     except Exception as e:
