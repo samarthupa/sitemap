@@ -12,27 +12,28 @@ def check_status_and_redirection(url, user_agent):
         response = requests.get(url, headers=headers, allow_redirects=False)
         status_code = response.status_code
         redirection_urls = []
-        redirection_status_codes = []
         if status_code in [301, 307, 302]:
             while 'location' in response.headers:
-                redirection_url = response.headers['location']
-                redirection_status_code = requests.get(redirection_url, headers=headers, allow_redirects=False).status_code
-                redirection_urls.append(redirection_url)
-                redirection_status_codes.append(redirection_status_code)
-                response = requests.get(redirection_url, headers=headers, allow_redirects=False)
-        return status_code, redirection_urls, redirection_status_codes
+                redirection_urls.append(response.headers['location'])
+                response = requests.get(response.headers['location'], headers=headers, allow_redirects=False)
+        return status_code, redirection_urls
     except Exception as e:
-        return str(e), "N/A", "N/A"
+        return str(e), "N/A"
 
 # Streamlit UI
+st.set_page_config(page_title="URL Analysis Tool", layout="wide")
+
 st.title("URL Analysis Tool")
 
 # Input fields
-urls = st.text_area("Enter URL(s) (one URL per line)", height=150)
-user_agents = st.selectbox("Choose User Agent", ["Chrome", "Firefox", "Safari"])
+col1, col2 = st.columns([1, 3])
+with col1:
+    urls = st.text_area("Enter URL(s) (one URL per line)", height=150)
+with col2:
+    user_agents = st.selectbox("Choose User Agent", ["Chrome", "Firefox", "Safari"])
 
 if st.button("Submit"):
-    with st.spinner("Analyzing URLs... It may take time if there are many URLs."):
+    with st.spinner("Analyzing URLs..."):
         ua = UserAgent()
         selected_user_agent = ""
         if user_agents == "Chrome":
@@ -47,16 +48,16 @@ if st.button("Submit"):
         max_redirections = 0
         final_destinations = []
         for url in urls_list:
-            status_code, redirection_urls, redirection_status_codes = check_status_and_redirection(url, selected_user_agent)
+            status_code, redirection_urls = check_status_and_redirection(url, selected_user_agent)
             max_redirections = max(max_redirections, len(redirection_urls))
-            results.append((url, status_code, *redirection_urls, *redirection_status_codes))
+            results.append((url, status_code, *redirection_urls))
             final_destination = redirection_urls[-1] if redirection_urls else url
             final_destinations.append((url, final_destination))
         
         # Prepare column headers for main sheet
         main_headers = ['URL', 'Status Code']
         for i in range(max_redirections):
-            main_headers.extend([f'Redirection URL {i+1}', f'Status Code {i+1}'])
+            main_headers.append(f'Redirection URL {i+1}')
 
         # Prepare data for main sheet
         main_data = [main_headers] + results
