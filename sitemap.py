@@ -28,14 +28,11 @@ if st.button("Submit"):
     urls_list = urls.split('\n')
     results = []
     max_redirections = 0
-    for idx, url in enumerate(urls_list, start=1):
+    for url in urls_list:
         headers = {"User-Agent": user_agents}
         status_code, redirection_urls = check_status_and_redirection(url)
         max_redirections = max(max_redirections, len(redirection_urls))
-        result_row = [f"{idx}. {url}", status_code]
-        for i, redirect_url in enumerate(redirection_urls, start=1):
-            result_row.append(redirect_url)
-        results.append(result_row)
+        results.append((url, status_code, *redirection_urls))
     
     # Prepare column headers
     headers = ['URL', 'Status Code']
