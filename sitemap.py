@@ -77,7 +77,9 @@ if st.button("Submit"):
         table = st.table(main_data)
 
         # Fullscreen button
-        full_screen = st.button("Full Screen")
+        full_screen_col, table_col, _ = st.columns([0.1, 8, 0.1])
+        full_screen_button = full_screen_col.empty()
+        full_screen_button.button("🔍 Full Screen", key="full_screen")
 
         # Download button for Excel file
         st.download_button(
@@ -88,12 +90,8 @@ if st.button("Submit"):
         )
 
         # Check if Full Screen button is clicked
-        if full_screen:
+        if full_screen_button.button_clicked("full_screen"):
             table.full_screen()
-
-        # Exit fullscreen button
-        exit_full_screen = st.button("Exit Full Screen")
-
-        # Check if Exit Full Screen button is clicked
-        if exit_full_screen:
-            table.window()
+            # Minimize screen icon
+            if st.button("🔍 Minimize Screen", key="minimize_screen"):
+                table.window()
