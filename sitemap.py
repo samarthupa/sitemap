@@ -21,37 +21,25 @@ def check_status_and_redirection(url, user_agent):
         return str(e), "N/A"
 
 # Streamlit UI
+st.set_page_config(layout="wide")
+
 st.title("URL Analysis Tool")
 
 # Input fields
-col1, col2 = st.columns([3, 1])
-with col1:
-    urls = st.text_area("Enter URL(s) (one URL per line)", height=150)
-with col2:
-    st.text("")  # Placeholder for layout alignment
+urls = st.text_area("Enter URL(s) (one URL per line)", height=150)
+user_agents = st.selectbox("Choose User Agent", ["Chrome", "Firefox", "Safari"])
 
-st.write("")  # Empty space
-
-# Zoom buttons
-zoom_in, _, zoom_out = st.columns([1, 3, 1])
-with zoom_in:
-    if st.button("Zoom In"):
-        st.markdown("<style> .css-1j9b1kc {transform: scale(1.1);}</style>", unsafe_allow_html=True)
-
-with zoom_out:
-    if st.button("Zoom Out"):
-        st.markdown("<style> .css-1j9b1kc {transform: scale(0.9);}</style>", unsafe_allow_html=True)
-
-st.write("")  # Empty space
-
-# Submit button
-submit_button = st.button("Submit")
-
-# Process when submit button is clicked
-if submit_button:
-    with st.spinner("Analyzing URLs. Please wait..."):
+if st.button("Submit"):
+    with st.spinner("Processing..."):
         ua = UserAgent()
-        selected_user_agent = ua.chrome  # Default user agent
+        selected_user_agent = ""
+        if user_agents == "Chrome":
+            selected_user_agent = ua.chrome
+        elif user_agents == "Firefox":
+            selected_user_agent = ua.firefox
+        elif user_agents == "Safari":
+            selected_user_agent = ua.safari
+
         urls_list = urls.split('\n')
         results = []
         max_redirections = 0
@@ -86,7 +74,11 @@ if submit_button:
         excel_file.seek(0)
 
         # Display results in table
-        st.table(main_data)
+        table = st.table(main_data)
+
+        # Fullscreen button
+        full_screen = st.empty()
+        full_screen.button("Full Screen", key="full_screen")
 
         # Download button for Excel file
         st.download_button(
@@ -95,3 +87,16 @@ if submit_button:
             file_name="url_analysis_results.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+
+        # Exit fullscreen button
+        exit_full_screen = st.empty()
+
+        # Check if Full Screen button is clicked
+        if full_screen.button_clicked("full_screen"):
+            table.full_screen()
+            exit_full_screen.button("Exit Full Screen", key="exit_full_screen")
+
+        # Check if Exit Full Screen button is clicked
+        if exit_full_screen.button_clicked("exit_full_screen"):
+            table.window()
+
