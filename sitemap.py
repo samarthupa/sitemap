@@ -40,18 +40,18 @@ if st.button("Submit"):
         headers.append(f'Redirection URL {i+1}')
 
     # Display results in table
-    table_data = [headers] + results
-    table_data_without_numbers = [[str(cell) for cell in row[1:]] for row in table_data[1:]]
-    st.table(table_data_without_numbers)
+    st.write("## Analysis Results")
+    st.table(results)
 
     # Download button for CSV
     csv_data = StringIO()
     csv_writer = csv.writer(csv_data)
-    csv_writer.writerows(table_data)
+    csv_writer.writerows([headers] + results)
     csv_text = csv_data.getvalue()
     st.download_button(
         label="Download CSV",
         data=csv_text,
         file_name="url_analysis_results.csv",
-        mime="text/csv"
+        mime="text/csv",
+        help="Click to download the analysis results as a CSV file."
     )
