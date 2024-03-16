@@ -76,6 +76,19 @@ if st.button("Submit"):
         # Display results in table
         st.table(main_data)
 
+        # Inject custom CSS to remove zoom icon when hovering over the table
+        st.markdown(
+            """
+            <style>
+            .streamlit-table-hoverable tbody tr:hover {
+                background-color: transparent;
+                cursor: default;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+
         # Download button for Excel file
         st.download_button(
             label="Download Excel",
