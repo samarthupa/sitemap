@@ -55,13 +55,13 @@ if st.button("Submit"):
         fixed_redirections.append((url, final_destination))
     df_fixed_redirections = pd.DataFrame(fixed_redirections, columns=['URL', 'Final Destination'])
 
-    # Download button for Excel with two tabs
-    with st.spinner('Downloading...'):
-        excel_writer = pd.ExcelWriter('url_analysis_results.xlsx', engine='xlsxwriter')
-        df_current.to_excel(excel_writer, sheet_name='Current Data', index=False)
-        df_fixed_redirections.to_excel(excel_writer, sheet_name='Fixed Redirections', index=False)
-        excel_writer.save()
-        st.success('Download Complete!')
+ # Download button for Excel with two tabs
+with st.spinner('Downloading...'):
+    excel_writer = pd.ExcelWriter('url_analysis_results.xlsx', engine='xlsxwriter')
+    df_current.to_excel(excel_writer, sheet_name='Current Data', index=False)
+    df_fixed_redirections.to_excel(excel_writer, sheet_name='Fixed Redirections', index=False)
+    excel_writer.close()  # Corrected method name
+    st.success('Download Complete!')
 
     # Display results in table
     st.table(df_current)
