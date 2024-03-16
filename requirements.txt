@@ -2,3 +2,4 @@ streamlit
 requests
 lxml
 beautifulsoup4
+xlsxwriter
