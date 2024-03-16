@@ -74,11 +74,7 @@ if st.button("Submit"):
         excel_file.seek(0)
 
         # Display results in table
-        table = st.table(main_data)
-
-        # Fullscreen button
-        full_screen = st.empty()
-        full_screen.button("Full Screen", key="full_screen")
+        st.table(main_data)
 
         # Download button for Excel file
         st.download_button(
@@ -87,16 +83,3 @@ if st.button("Submit"):
             file_name="url_analysis_results.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-
-        # Exit fullscreen button
-        exit_full_screen = st.empty()
-
-        # Check if Full Screen button is clicked
-        if full_screen.button_clicked("full_screen"):
-            table.full_screen()
-            exit_full_screen.button("Exit Full Screen", key="exit_full_screen")
-
-        # Check if Exit Full Screen button is clicked
-        if exit_full_screen.button_clicked("exit_full_screen"):
-            table.window()
-
