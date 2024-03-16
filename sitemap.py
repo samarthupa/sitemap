@@ -3,17 +3,19 @@ import requests
 import csv
 import pandas as pd
 from io import BytesIO
+from fake_useragent import UserAgent
 
 # Function to check status code and redirection of URL
-def check_status_and_redirection(url):
+def check_status_and_redirection(url, user_agent):
     try:
-        response = requests.get(url, allow_redirects=False)
+        headers = {"User-Agent": user_agent}
+        response = requests.get(url, headers=headers, allow_redirects=False)
         status_code = response.status_code
         redirection_urls = []
         if status_code in [301, 307, 302]:
             while 'location' in response.headers:
                 redirection_urls.append(response.headers['location'])
-                response = requests.get(response.headers['location'], allow_redirects=False)
+                response = requests.get(response.headers['location'], headers=headers, allow_redirects=False)
         return status_code, redirection_urls
     except Exception as e:
         return str(e), "N/A"
@@ -23,16 +25,24 @@ st.title("URL Analysis Tool")
 
 # Input fields
 urls = st.text_area("Enter URL(s) (one URL per line)", height=150)
-user_agents = st.selectbox("Choose User Agent", ["", "Chrome", "Firefox", "Safari"])
+user_agents = st.selectbox("Choose User Agent", ["Chrome", "Firefox", "Safari"])
 
 if st.button("Submit"):
+    ua = UserAgent()
+    selected_user_agent = ""
+    if user_agents == "Chrome":
+        selected_user_agent = ua.chrome
+    elif user_agents == "Firefox":
+        selected_user_agent = ua.firefox
+    elif user_agents == "Safari":
+        selected_user_agent = ua.safari
+
     urls_list = urls.split('\n')
     results = []
     max_redirections = 0
     final_destinations = []
     for url in urls_list:
-        headers = {"User-Agent": user_agents}
-        status_code, redirection_urls = check_status_and_redirection(url)
+        status_code, redirection_urls = check_status_and_redirection(url, selected_user_agent)
         max_redirections = max(max_redirections, len(redirection_urls))
         results.append((url, status_code, *redirection_urls))
         final_destination = redirection_urls[-1] if redirection_urls else url
