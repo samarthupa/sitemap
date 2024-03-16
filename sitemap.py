@@ -57,7 +57,7 @@ if st.button("Submit"):
     for sheet_name, sheet_data in excel_data.items():
         df = pd.DataFrame(sheet_data)
         df.to_excel(excel_writer, index=False, sheet_name=sheet_name, header=False)
-    excel_writer.save()
+    excel_writer.close()  # Close the writer
     excel_file.seek(0)
 
     # Display results in table
