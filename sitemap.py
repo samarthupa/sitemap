@@ -64,7 +64,7 @@ if st.button("Submit"):
         fix_redirection_data = [fix_redirection_headers] + final_destinations
 
         # Create Excel file with two sheets
-        excel_data = {'Main Sheet': main_data, 'Fix Redirection': fix_redirection_data}
+        excel_data = {'Redirections': main_data, 'Fix Redirections': fix_redirection_data}
         excel_file = BytesIO()
         excel_writer = pd.ExcelWriter(excel_file, engine='xlsxwriter')
         for sheet_name, sheet_data in excel_data.items():
