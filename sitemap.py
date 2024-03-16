@@ -28,24 +28,28 @@ if st.button("Submit"):
     urls_list = urls.split('\n')
     results = []
     max_redirections = 0
-    for url in urls_list:
+    for i, url in enumerate(urls_list, start=1):  # Start row numbering from 1
         headers = {"User-Agent": user_agents}
         status_code, redirection_urls = check_status_and_redirection(url)
         max_redirections = max(max_redirections, len(redirection_urls))
-        results.append((url, status_code, *redirection_urls))
-    
-    # Prepare column headers
-    headers = ['URL', 'Status Code']
+        results.append((i, url, status_code, *redirection_urls))  # Include row number
+
+    # Prepare column headers, excluding the row number
+    headers = ['Row', 'URL', 'Status Code']
     for i in range(max_redirections):
         headers.append(f'Redirection URL {i+1}')
 
-    # Display results in table
-    st.table(results)
+    # Create a custom function to display the table with row numbering
+    def display_table_with_row_numbering(data):
+        st.table(data)  # Display the table
+
+    # Display table with custom function
+    display_table_with_row_numbering([headers] + results)
 
     # Download button for CSV
     csv_data = StringIO()
     csv_writer = csv.writer(csv_data)
-    csv_writer.writerows(results)
+    csv_writer.writerows([headers] + results)
     csv_text = csv_data.getvalue()
     st.download_button(
         label="Download CSV",
