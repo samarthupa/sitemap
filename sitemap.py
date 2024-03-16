@@ -32,7 +32,7 @@ if st.button("Submit"):
         headers = {"User-Agent": user_agents}
         status_code, redirection_urls = check_status_and_redirection(url)
         max_redirections = max(max_redirections, len(redirection_urls))
-        results.append((url, status_code, *redirection_urls))
+        results.append((S.No, url, status_code, *redirection_urls))
     
     # Prepare column headers
     headers = ['URL', 'Status Code']
