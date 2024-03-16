@@ -39,17 +39,15 @@ if st.button("Submit"):
     for i in range(max_redirections):
         headers.append(f'Redirection URL {i+1}')
 
-    # Add row numbers (starting from 2)
-    row_num = 2
-    formatted_results = [[row_num] + list(row) for row_num, row in enumerate(results, start=2)]
+    # Display results in table without column numbering
+    st.write("## Analysis Results")
+    st.table(results)
 
-    # Display results in table with custom formatting
-    st.table(formatted_results, use_container_width=True, hide_index=True)  # Hide index for row numbers
-
-    # Download button for CSV (unchanged)
+    # Download button for CSV
     csv_data = StringIO()
     csv_writer = csv.writer(csv_data)
-    csv_writer.writerows([headers] + results)
+    csv_writer.writerow(headers)
+    csv_writer.writerows(results)
     csv_text = csv_data.getvalue()
     st.download_button(
         label="Download CSV",
