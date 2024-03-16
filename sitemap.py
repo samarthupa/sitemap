@@ -64,30 +64,23 @@ if st.button("Submit"):
         mime="text/csv"
     )
 
-# Fix redirections button
-if st.button("Fix Redirections"):
-    urls_list = urls.split('\n')
-    results = []
-    for url in urls_list:
-        headers = {"User-Agent": user_agents}
-        status_code, redirection_urls = check_status_and_redirection(url)
-        final_destination = redirection_urls[-1] if redirection_urls else url
-        results.append((url, final_destination))
-    
-    # Prepare column headers for fixed redirections
-    fixed_headers = ['Original URL', 'Final Destination']
-    
-    # Display fixed redirections in table
-    st.table([fixed_headers] + results)
-    
-    # Download button for CSV of fixed redirections
-    fixed_csv_data = StringIO()
-    fixed_csv_writer = csv.writer(fixed_csv_data)
-    fixed_csv_writer.writerows([fixed_headers] + results)
-    fixed_csv_text = fixed_csv_data.getvalue()
-    st.download_button(
-        label="Download Fixed Redirections CSV",
-        data=fixed_csv_text,
-        file_name="fixed_redirections.csv",
-        mime="text/csv"
-    )
+    # Fix redirections button
+    if st.button("Fix Redirections"):
+        fixed_results = fix_redirections(results)
+        # Prepare column headers for fixed redirections
+        fixed_headers = ['Original URL', 'Final Destination']
+        
+        # Display fixed redirections in table
+        st.table([fixed_headers] + fixed_results)
+        
+        # Download button for CSV of fixed redirections
+        fixed_csv_data = StringIO()
+        fixed_csv_writer = csv.writer(fixed_csv_data)
+        fixed_csv_writer.writerows([fixed_headers] + fixed_results)
+        fixed_csv_text = fixed_csv_data.getvalue()
+        st.download_button(
+            label="Download Fixed Redirections CSV",
+            data=fixed_csv_text,
+            file_name="fixed_redirections.csv",
+            mime="text/csv"
+        )
