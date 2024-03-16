@@ -48,6 +48,9 @@ if st.button("Submit"):
         # Progress bar
         progress_bar = st.progress(0)
         for i, url in enumerate(urls_list):
+            if url.strip() == '':  # Skip processing if the row is blank
+                continue
+            
             progress_percent = (i + 1) / len(urls_list)
             progress_bar.progress(progress_percent)
             
