@@ -21,28 +21,37 @@ def check_status_and_redirection(url, user_agent):
         return str(e), "N/A"
 
 # Streamlit UI
-st.set_page_config(page_title="URL Analysis Tool", layout="wide")
-
 st.title("URL Analysis Tool")
 
 # Input fields
-col1, col2 = st.columns([1, 3])
+col1, col2 = st.columns([3, 1])
 with col1:
     urls = st.text_area("Enter URL(s) (one URL per line)", height=150)
 with col2:
-    user_agents = st.selectbox("Choose User Agent", ["Chrome", "Firefox", "Safari"])
+    st.text("")  # Placeholder for layout alignment
 
-if st.button("Submit"):
-    with st.spinner("Analyzing URLs..."):
+st.write("")  # Empty space
+
+# Zoom buttons
+zoom_in, _, zoom_out = st.columns([1, 3, 1])
+with zoom_in:
+    if st.button("Zoom In"):
+        st.markdown("<style> .css-1j9b1kc {transform: scale(1.1);}</style>", unsafe_allow_html=True)
+
+with zoom_out:
+    if st.button("Zoom Out"):
+        st.markdown("<style> .css-1j9b1kc {transform: scale(0.9);}</style>", unsafe_allow_html=True)
+
+st.write("")  # Empty space
+
+# Submit button
+submit_button = st.button("Submit")
+
+# Process when submit button is clicked
+if submit_button:
+    with st.spinner("Analyzing URLs. Please wait..."):
         ua = UserAgent()
-        selected_user_agent = ""
-        if user_agents == "Chrome":
-            selected_user_agent = ua.chrome
-        elif user_agents == "Firefox":
-            selected_user_agent = ua.firefox
-        elif user_agents == "Safari":
-            selected_user_agent = ua.safari
-
+        selected_user_agent = ua.chrome  # Default user agent
         urls_list = urls.split('\n')
         results = []
         max_redirections = 0
