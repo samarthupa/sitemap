@@ -17,28 +17,6 @@ def check_status_and_redirection(url):
     except Exception as e:
         return str(e), "N/A"
 
-# Function to fix redirections and download CSV
-def fix_redirections_and_download_csv(urls_list):
-    fixed_redirections = []
-    for url in urls_list:
-        status_code, redirection_urls = check_status_and_redirection(url)
-        fixed_redirections.append((url, redirection_urls[-1] if redirection_urls else "No Redirection"))
-    
-    # Prepare CSV data
-    csv_data = StringIO()
-    csv_writer = csv.writer(csv_data)
-    csv_writer.writerow(['URL', 'Destination URL'])
-    csv_writer.writerows(fixed_redirections)
-    csv_text = csv_data.getvalue()
-    
-    # Download CSV
-    st.download_button(
-        label="Download Fixed Redirection CSV",
-        data=csv_text,
-        file_name="fixed_redirections.csv",
-        mime="text/csv"
-    )
-
 # Streamlit UI
 st.title("URL Analysis Tool")
 
@@ -62,7 +40,24 @@ if st.button("Submit"):
         headers.append(f'Redirection URL {i+1}')
 
     # Display results in table
-    st.table([headers] + results)
+    for row in results:
+        st.write(row[0], row[1], row[2:])
+
+        # Button to fix redirection
+        if row[2:]:
+            fix_redirect_button = st.button(f"Fix Redirection for {row[0]}")
+            if fix_redirect_button:
+                fixed_url = row[-1]
+                st.write(f"Fixed URL: {fixed_url}")
     
-    # Add button to fix redirections and download CSV
-    fix_redirections_and_download_csv(urls_list)
+    # Download button for CSV
+    csv_data = StringIO()
+    csv_writer = csv.writer(csv_data)
+    csv_writer.writerows([headers] + results)
+    csv_text = csv_data.getvalue()
+    st.download_button(
+        label="Download CSV",
+        data=csv_text,
+        file_name="url_analysis_results.csv",
+        mime="text/csv"
+    )
