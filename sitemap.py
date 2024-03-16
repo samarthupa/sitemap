@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import csv
 from io import StringIO
+import pandas as pd
 
 # Function to check status code and redirection of URL
 def check_status_and_redirection(url):
@@ -17,15 +18,10 @@ def check_status_and_redirection(url):
     except Exception as e:
         return str(e), "N/A"
 
-# Function to fix redirections and get final destination URL
-def fix_redirections(results):
-    fixed_results = []
-    for result in results:
-        url = result[0]
-        status_code, redirection_urls = check_status_and_redirection(url)
-        final_destination = redirection_urls[-1] if redirection_urls else url
-        fixed_results.append((url, final_destination))
-    return fixed_results
+# Function to get final destination URL
+def get_final_destination(url):
+    response = requests.get(url)
+    return response.url
 
 # Streamlit UI
 st.title("URL Analysis Tool")
@@ -49,40 +45,27 @@ if st.button("Submit"):
     for i in range(max_redirections):
         headers.append(f'Redirection URL {i+1}')
 
+    # Create DataFrame for current data
+    df_current = pd.DataFrame([headers] + results[1:], columns=headers)
+
+    # Create DataFrame for fixed redirections
+    fixed_redirections = []
+    for url, _, *redirection_urls in results[1:]:
+        final_destination = get_final_destination(url)
+        fixed_redirections.append((url, final_destination))
+    df_fixed_redirections = pd.DataFrame(fixed_redirections, columns=['URL', 'Final Destination'])
+
+    # Download button for Excel with two tabs
+    with st.spinner('Downloading...'):
+        excel_writer = pd.ExcelWriter('url_analysis_results.xlsx', engine='xlsxwriter')
+        df_current.to_excel(excel_writer, sheet_name='Current Data', index=False)
+        df_fixed_redirections.to_excel(excel_writer, sheet_name='Fixed Redirections', index=False)
+        excel_writer.save()
+        st.success('Download Complete!')
+
     # Display results in table
-    result_placeholder = st.empty()
-    result_placeholder.table([headers] + results)
+    st.table(df_current)
 
-    # Download button for CSV of redirections
-    csv_data = StringIO()
-    csv_writer = csv.writer(csv_data)
-    csv_writer.writerows([headers] + results)
-    csv_text = csv_data.getvalue()
-    st.download_button(
-        label="Download Redirections CSV",
-        data=csv_text,
-        file_name="url_analysis_redirections.csv",
-        mime="text/csv"
-    )
-
-    # Fix redirections button
-    if st.button("Fix Redirections"):
-        fixed_results = fix_redirections(results)
-        # Prepare column headers for fixed redirections
-        fixed_headers = ['Original URL', 'Final Destination']
-        
-        # Display fixed redirections in table
-        fixed_result_placeholder = st.empty()
-        fixed_result_placeholder.table([fixed_headers] + fixed_results)
-        
-        # Download button for CSV of fixed redirections
-        fixed_csv_data = StringIO()
-        fixed_csv_writer = csv.writer(fixed_csv_data)
-        fixed_csv_writer.writerows([fixed_headers] + fixed_results)
-        fixed_csv_text = fixed_csv_data.getvalue()
-        st.download_button(
-            label="Download Fixed Redirections CSV",
-            data=fixed_csv_text,
-            file_name="fixed_redirections.csv",
-            mime="text/csv"
-        )
+    # Display fixed redirections
+    st.subheader("Fixed Redirections")
+    st.table(df_fixed_redirections)
