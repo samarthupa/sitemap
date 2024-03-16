@@ -76,14 +76,8 @@ if st.button("Submit"):
         # Display results in table
         table = st.table(main_data)
 
-        # Apply custom CSS to hide zoom icon
-        st.markdown("""
-        <style>
-        .stTable table thead th {
-            cursor: default !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
+        # Fullscreen button
+        full_screen = st.button("Full Screen")
 
         # Download button for Excel file
         st.download_button(
@@ -92,3 +86,14 @@ if st.button("Submit"):
             file_name="url_analysis_results.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+
+        # Check if Full Screen button is clicked
+        if full_screen:
+            table.full_screen()
+
+        # Exit fullscreen button
+        exit_full_screen = st.button("Exit Full Screen")
+
+        # Check if Exit Full Screen button is clicked
+        if exit_full_screen:
+            table.window()
