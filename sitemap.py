@@ -23,7 +23,7 @@ st.title("URL Analysis Tool")
 
 # Input fields
 urls = st.text_area("Enter URL(s) (one URL per line)", height=150)
-user_agents = st.selectbox("Choose User Agent", ["Chrome", "Firefox", "Safari"])
+user_agents = st.selectbox("Choose User Agent", ["", "Chrome", "Firefox", "Safari"])
 
 if st.button("Submit"):
     urls_list = urls.split('\n')
