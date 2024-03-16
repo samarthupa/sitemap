@@ -27,29 +27,35 @@ user_agents = st.selectbox("Choose User Agent", ["Chrome", "Firefox", "Safari"])
 if st.button("Submit"):
     urls_list = urls.split('\n')
     results = []
+    fixed_redirections = []
     max_redirections = 0
     for url in urls_list:
         headers = {"User-Agent": user_agents}
         status_code, redirection_urls = check_status_and_redirection(url)
         max_redirections = max(max_redirections, len(redirection_urls))
         results.append((url, status_code, *redirection_urls))
+        # If there are redirections, fix the redirection by getting the final destination URL
+        if redirection_urls:
+            fixed_redirections.append((url, redirection_urls[-1]))  # Append original URL and final destination URL
     
-    # Prepare column headers
-    headers = ['URL', 'Status Code']
+    # Prepare column headers for the results table
+    headers_results = ['URL', 'Status Code']
     for i in range(max_redirections):
-        headers.append(f'Redirection URL {i+1}')
+        headers_results.append(f'Redirection URL {i+1}')
 
     # Display results in table
-    st.table([headers] + results)
+    st.table([headers_results] + results)
 
-    # Download button for CSV
-    csv_data = StringIO()
-    csv_writer = csv.writer(csv_data)
-    csv_writer.writerows([headers] + results)
-    csv_text = csv_data.getvalue()
-    st.download_button(
-        label="Download CSV",
-        data=csv_text,
-        file_name="url_analysis_results.csv",
-        mime="text/csv"
-    )
+    # Download button for CSV of original URLs and their fixed destinations
+    if fixed_redirections:
+        csv_data_fixed = StringIO()
+        csv_writer_fixed = csv.writer(csv_data_fixed)
+        csv_writer_fixed.writerow(['Original URL', 'Fixed Destination URL'])
+        csv_writer_fixed.writerows(fixed_redirections)
+        csv_text_fixed = csv_data_fixed.getvalue()
+        st.download_button(
+            label="Download Fixed Redirections CSV",
+            data=csv_text_fixed,
+            file_name="fixed_redirections.csv",
+            mime="text/csv"
+        )
