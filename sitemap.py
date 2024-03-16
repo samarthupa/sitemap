@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 import csv
 import pandas as pd
-from io import StringIO
+from io import BytesIO
 
 # Function to check status code and redirection of URL
 def check_status_and_redirection(url):
@@ -52,11 +52,13 @@ if st.button("Submit"):
 
     # Create Excel file with two sheets
     excel_data = {'Main Sheet': main_data, 'Fix Redirection': fix_redirection_data}
-    excel_file = pd.ExcelWriter('url_analysis_results.xlsx', engine='xlsxwriter')
+    excel_file = BytesIO()
+    excel_writer = pd.ExcelWriter(excel_file, engine='xlsxwriter')
     for sheet_name, sheet_data in excel_data.items():
         df = pd.DataFrame(sheet_data)
-        df.to_excel(excel_file, index=False, sheet_name=sheet_name, header=False)
-    excel_file.save()
+        df.to_excel(excel_writer, index=False, sheet_name=sheet_name, header=False)
+    excel_writer.save()
+    excel_file.seek(0)
 
     # Display results in table
     st.table(main_data)
@@ -64,7 +66,7 @@ if st.button("Submit"):
     # Download button for Excel file
     st.download_button(
         label="Download Excel",
-        data=open('url_analysis_results.xlsx', 'rb'),
+        data=excel_file,
         file_name="url_analysis_results.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
