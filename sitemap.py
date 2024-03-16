@@ -35,12 +35,12 @@ if st.button("Submit"):
         results.append((url, status_code, *redirection_urls))
     
     # Prepare column headers
-    headers = ['URL', 'Status Code']
+    headers = ['S.No', 'URL', 'Status Code']  # Modified headers
     for i in range(max_redirections):
         headers.append(f'Redirection URL {i+1}')
 
     # Display results in table
-    st.table([headers] + results)
+    st.table(results)  # Removed [headers] from here
 
     # Download button for CSV
     csv_data = StringIO()
@@ -53,3 +53,4 @@ if st.button("Submit"):
         file_name="url_analysis_results.csv",
         mime="text/csv"
     )
+
