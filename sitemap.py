@@ -39,15 +39,13 @@ if st.button("Submit"):
     for i in range(max_redirections):
         headers.append(f'Redirection URL {i+1}')
 
-    # Display results in table without column numbering
-    st.write("## Analysis Results")
-    st.table(results)
+    # Display results in table
+    st.table([headers] + results)
 
     # Download button for CSV
     csv_data = StringIO()
     csv_writer = csv.writer(csv_data)
-    csv_writer.writerow(headers)
-    csv_writer.writerows(results)
+    csv_writer.writerows([headers] + results)
     csv_text = csv_data.getvalue()
     st.download_button(
         label="Download CSV",
