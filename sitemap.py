@@ -23,7 +23,7 @@ def check_status_and_redirection(url, user_agent):
 # Streamlit UI
 st.set_page_config(layout="wide")
 
-st.title("URL Analysis Tool")
+st.title("Check and Fix Redirections")
 
 # Input fields
 urls = st.text_area("Enter URL(s) (one URL per line)", height=150)
