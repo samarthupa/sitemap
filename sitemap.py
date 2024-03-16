@@ -34,7 +34,11 @@ st.title("URL Analysis Tool")
 urls = st.text_area("Enter URL(s) (one URL per line)", height=150)
 user_agents = st.selectbox("Choose User Agent", ["Chrome", "Firefox", "Safari"])
 
-if st.button("Submit"):
+# Submit button
+submit_button = st.button("Submit")
+
+# Fix Redirections button
+if submit_button:
     urls_list = urls.split('\n')
     results = []
     max_redirections = 0
@@ -65,7 +69,8 @@ if st.button("Submit"):
     )
 
     # Fix redirections button
-    if st.button("Fix Redirections"):
+    fix_redirection_button = st.button("Fix Redirections")
+    if fix_redirection_button:
         fixed_results = fix_redirections(results)
         # Prepare column headers for fixed redirections
         fixed_headers = ['Original URL', 'Final Destination']
