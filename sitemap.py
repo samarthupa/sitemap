@@ -50,7 +50,8 @@ if st.button("Submit"):
         headers.append(f'Redirection URL {i+1}')
 
     # Display results in table
-    st.table([headers] + results)
+    result_placeholder = st.empty()
+    result_placeholder.table([headers] + results)
 
     # Download button for CSV of redirections
     csv_data = StringIO()
@@ -65,14 +66,14 @@ if st.button("Submit"):
     )
 
     # Fix redirections button
-    fix_redirections_button = st.button("Fix Redirections")
-    if fix_redirections_button:
+    if st.button("Fix Redirections"):
         fixed_results = fix_redirections(results)
         # Prepare column headers for fixed redirections
         fixed_headers = ['Original URL', 'Final Destination']
         
         # Display fixed redirections in table
-        st.table([fixed_headers] + fixed_results)
+        fixed_result_placeholder = st.empty()
+        fixed_result_placeholder.table([fixed_headers] + fixed_results)
         
         # Download button for CSV of fixed redirections
         fixed_csv_data = StringIO()
