@@ -17,6 +17,16 @@ def check_status_and_redirection(url):
     except Exception as e:
         return str(e), "N/A"
 
+# Function to fix redirections and get final destination URL
+def fix_redirections(results):
+    fixed_results = []
+    for result in results:
+        url = result[0]
+        status_code, redirection_urls = check_status_and_redirection(url)
+        final_destination = redirection_urls[-1] if redirection_urls else url
+        fixed_results.append((url, final_destination))
+    return fixed_results
+
 # Streamlit UI
 st.title("URL Analysis Tool")
 
@@ -40,24 +50,44 @@ if st.button("Submit"):
         headers.append(f'Redirection URL {i+1}')
 
     # Display results in table
-    for row in results:
-        st.write(row[0], row[1], row[2:])
+    st.table([headers] + results)
 
-        # Button to fix redirection
-        if row[2:]:
-            fix_redirect_button = st.button(f"Fix Redirection for {row[0]}")
-            if fix_redirect_button:
-                fixed_url = row[-1]
-                st.write(f"Fixed URL: {fixed_url}")
-    
-    # Download button for CSV
+    # Download button for CSV of redirections
     csv_data = StringIO()
     csv_writer = csv.writer(csv_data)
     csv_writer.writerows([headers] + results)
     csv_text = csv_data.getvalue()
     st.download_button(
-        label="Download CSV",
+        label="Download Redirections CSV",
         data=csv_text,
-        file_name="url_analysis_results.csv",
+        file_name="url_analysis_redirections.csv",
+        mime="text/csv"
+    )
+
+# Fix redirections button
+if st.button("Fix Redirections"):
+    urls_list = urls.split('\n')
+    results = []
+    for url in urls_list:
+        headers = {"User-Agent": user_agents}
+        status_code, redirection_urls = check_status_and_redirection(url)
+        final_destination = redirection_urls[-1] if redirection_urls else url
+        results.append((url, final_destination))
+    
+    # Prepare column headers for fixed redirections
+    fixed_headers = ['Original URL', 'Final Destination']
+    
+    # Display fixed redirections in table
+    st.table([fixed_headers] + results)
+    
+    # Download button for CSV of fixed redirections
+    fixed_csv_data = StringIO()
+    fixed_csv_writer = csv.writer(fixed_csv_data)
+    fixed_csv_writer.writerows([fixed_headers] + results)
+    fixed_csv_text = fixed_csv_data.getvalue()
+    st.download_button(
+        label="Download Fixed Redirections CSV",
+        data=fixed_csv_text,
+        file_name="fixed_redirections.csv",
         mime="text/csv"
     )
