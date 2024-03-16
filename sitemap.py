@@ -80,6 +80,6 @@ if st.button("Submit"):
         st.download_button(
             label="Download Excel",
             data=excel_file,
-            file_name="url_analysis_results.xlsx",
+            file_name="check_and_fix_redirections.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
