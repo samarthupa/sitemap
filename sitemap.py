@@ -28,11 +28,14 @@ if st.button("Submit"):
     urls_list = urls.split('\n')
     results = []
     max_redirections = 0
-    for url in urls_list:
+    for idx, url in enumerate(urls_list, start=1):
         headers = {"User-Agent": user_agents}
         status_code, redirection_urls = check_status_and_redirection(url)
         max_redirections = max(max_redirections, len(redirection_urls))
-        results.append((url, status_code, *redirection_urls))
+        result_row = [f"{idx}. {url}", status_code]
+        for i, redirect_url in enumerate(redirection_urls, start=1):
+            result_row.append(redirect_url)
+        results.append(result_row)
     
     # Prepare column headers
     headers = ['URL', 'Status Code']
@@ -40,8 +43,7 @@ if st.button("Submit"):
         headers.append(f'Redirection URL {i+1}')
 
     # Display results in table
-    st.write("## Analysis Results")
-    st.table(results)
+    st.table([headers] + results)
 
     # Download button for CSV
     csv_data = StringIO()
@@ -52,6 +54,5 @@ if st.button("Submit"):
         label="Download CSV",
         data=csv_text,
         file_name="url_analysis_results.csv",
-        mime="text/csv",
-        help="Click to download the analysis results as a CSV file."
+        mime="text/csv"
     )
