@@ -30,68 +30,56 @@ urls = st.text_area("Enter URL(s) (one URL per line)", height=150)
 user_agents = st.selectbox("Choose User Agent", ["Chrome", "Firefox", "Safari"])
 
 if st.button("Submit"):
-    with st.spinner("Processing..."):
-        ua = UserAgent()
-        selected_user_agent = ""
-        if user_agents == "Chrome":
-            selected_user_agent = ua.chrome
-        elif user_agents == "Firefox":
-            selected_user_agent = ua.firefox
-        elif user_agents == "Safari":
-            selected_user_agent = ua.safari
+    st.write("Processing... It may take some time if there are many URLs.")
+    ua = UserAgent()
+    selected_user_agent = ""
+    if user_agents == "Chrome":
+        selected_user_agent = ua.chrome
+    elif user_agents == "Firefox":
+        selected_user_agent = ua.firefox
+    elif user_agents == "Safari":
+        selected_user_agent = ua.safari
 
-        urls_list = urls.split('\n')
-        results = []
-        max_redirections = 0
-        final_destinations = []
-        for url in urls_list:
-            status_code, redirection_urls = check_status_and_redirection(url, selected_user_agent)
-            max_redirections = max(max_redirections, len(redirection_urls))
-            results.append((url, status_code, *redirection_urls))
-            final_destination = redirection_urls[-1] if redirection_urls else url
-            final_destinations.append((url, final_destination))
-        
-        # Prepare column headers for main sheet
-        main_headers = ['URL', 'Status Code']
-        for i in range(max_redirections):
-            main_headers.append(f'Redirection URL {i+1}')
+    urls_list = urls.split('\n')
+    results = []
+    max_redirections = 0
+    final_destinations = []
+    for url in urls_list:
+        status_code, redirection_urls = check_status_and_redirection(url, selected_user_agent)
+        max_redirections = max(max_redirections, len(redirection_urls))
+        results.append((url, status_code, *redirection_urls))
+        final_destination = redirection_urls[-1] if redirection_urls else url
+        final_destinations.append((url, final_destination))
+    
+    # Prepare column headers for main sheet
+    main_headers = ['URL', 'Status Code']
+    for i in range(max_redirections):
+        main_headers.append(f'Redirection URL {i+1}')
 
-        # Prepare data for main sheet
-        main_data = [main_headers] + results
+    # Prepare data for main sheet
+    main_data = [main_headers] + results
 
-        # Prepare data for fix redirection sheet
-        fix_redirection_headers = ['Original URL', 'Final Destination URL']
-        fix_redirection_data = [fix_redirection_headers] + final_destinations
+    # Prepare data for fix redirection sheet
+    fix_redirection_headers = ['Original URL', 'Final Destination URL']
+    fix_redirection_data = [fix_redirection_headers] + final_destinations
 
-        # Create Excel file with two sheets
-        excel_data = {'Main Sheet': main_data, 'Fix Redirection': fix_redirection_data}
-        excel_file = BytesIO()
-        excel_writer = pd.ExcelWriter(excel_file, engine='xlsxwriter')
-        for sheet_name, sheet_data in excel_data.items():
-            df = pd.DataFrame(sheet_data)
-            df.to_excel(excel_writer, index=False, sheet_name=sheet_name, header=False)
-        excel_writer.close()  # Close the writer
-        excel_file.seek(0)
+    # Create Excel file with two sheets
+    excel_data = {'Main Sheet': main_data, 'Fix Redirection': fix_redirection_data}
+    excel_file = BytesIO()
+    excel_writer = pd.ExcelWriter(excel_file, engine='xlsxwriter')
+    for sheet_name, sheet_data in excel_data.items():
+        df = pd.DataFrame(sheet_data)
+        df.to_excel(excel_writer, index=False, sheet_name=sheet_name, header=False)
+    excel_writer.close()  # Close the writer
+    excel_file.seek(0)
 
-        # Display results in table
-        table = st.table(main_data)
+    # Display results in table
+    st.table(main_data)
 
-        # Fullscreen button
-        full_screen_col, table_col, _ = st.columns([0.1, 8, 0.1])
-        full_screen_button = full_screen_col.empty()
-        full_screen_button.button("🔍 Full Screen", key="full_screen")
-
-        # Download button for Excel file
-        st.download_button(
-            label="Download Excel",
-            data=excel_file,
-            file_name="url_analysis_results.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-
-        # Check if Full Screen button is clicked
-        if full_screen_button.button_clicked("full_screen"):
-            table.full_screen()
-            # Minimize screen icon
-            if st.button("🔍 Minimize Screen", key="minimize_screen"):
-                table.window()
+    # Download button for Excel file
+    st.download_button(
+        label="Download Excel",
+        data=excel_file,
+        file_name="url_analysis_results.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
