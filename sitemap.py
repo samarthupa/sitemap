@@ -44,19 +44,14 @@ if st.button("Submit"):
         results = []
         max_redirections = 0
         final_destinations = []
-
-        # Use sets to store unique URLs
-        unique_urls = set()
+        processed_urls = set()  # To store processed URLs
         
         # Progress bar
         progress_bar = st.progress(0)
         for i, url in enumerate(urls_list):
-            if url.strip() == '':  # Skip processing if the row is blank
+            if url.strip() == '' or url in processed_urls:  # Skip processing if the row is blank or URL is already processed
                 continue
             
-            # Add URL to unique set
-            unique_urls.add(url.strip())
-
             progress_percent = (i + 1) / len(urls_list)
             progress_bar.progress(progress_percent)
             
@@ -65,18 +60,24 @@ if st.button("Submit"):
             results.append((url, status_code, *redirection_urls))
             final_destination = redirection_urls[-1] if redirection_urls else url
             final_destinations.append((url, status_code, final_destination))
+            
+            processed_urls.add(url)  # Add processed URL to set
         
         # Prepare column headers for main sheet
         main_headers = ['URL', 'Status Code']
         for i in range(max_redirections):
             main_headers.append(f'Redirection URL {i+1}')
 
-        # Prepare data for main sheet, remove duplicates
-        main_data = [main_headers] + list(set(results))
+        # Prepare data for main sheet
+        main_data = [main_headers] + results
 
-        # Prepare data for fix redirection sheet, remove duplicates
+        # Prepare data for fix redirection sheet
         fix_redirection_headers = ['Original URL', 'Status Code', 'Final Destination URL']
-        fix_redirection_data = [fix_redirection_headers] + list(set(final_destinations))
+        fix_redirection_data = [fix_redirection_headers]
+
+        for url, status_code, final_destination in final_destinations:
+            if status_code in [301, 302, 307]:
+                fix_redirection_data.append((url, status_code, final_destination))
 
         # Create Excel file with two sheets
         excel_data = {'Redirections': main_data, 'Fix Redirections': fix_redirection_data}
