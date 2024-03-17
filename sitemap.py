@@ -71,13 +71,12 @@ if st.button("Submit"):
         # Prepare data for fix redirection sheet
         fix_redirection_headers = ['Original URL', 'Status Code', 'Final Destination URL']
         fix_redirection_data = [fix_redirection_headers]
+        unique_urls = set()  # To keep track of unique URLs
 
-        # Remove duplicate URLs
-        unique_urls = set()
         for url, status_code, final_destination in final_destinations:
             if status_code in [301, 302, 307] and url not in unique_urls:
-                unique_urls.add(url)
                 fix_redirection_data.append((url, status_code, final_destination))
+                unique_urls.add(url)
 
         # Create Excel file with two sheets
         excel_data = {'Redirections': main_data, 'Fix Redirections': fix_redirection_data}
