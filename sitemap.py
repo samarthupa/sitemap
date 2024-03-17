@@ -84,17 +84,13 @@ if st.button("Submit"):
         fix_redirection_data = [fix_redirection_headers]
 
         # Extract all redirecting URLs and their final destinations
-        redirect_urls = {url: redirections[-1] for url, _, *redirections in results}
+        redirect_urls = {url: redirections for url, _, *redirections in results}
 
-        for url, final_destination in redirect_urls.items():
-            # Include redirecting URLs in the "Original URL" column only if they have further redirections
-            redirecting_urls = [url]
-            for redirect_url in results:
-                if redirect_url[0] == url and redirect_url[2] in redirect_urls:
-                    redirecting_urls.append(redirect_url[2])
-            # If there are further redirecting URLs, add them to the "Original URL" column
-            if len(redirecting_urls) > 1:
-                fix_redirection_data.append((' → '.join(redirecting_urls), final_destination))
+        for url, redirections in redirect_urls.items():
+            if len(redirections) > 1:  # Check if there are further redirections
+                original_urls = redirections[:-1]  # Exclude the final destination
+                for i, original_url in enumerate(original_urls):
+                    fix_redirection_data.append((original_url, redirections[-1]))
 
         # Create Excel file with two sheets
         excel_data = {'Redirections': main_data, 'Fix Redirections': fix_redirection_data}
