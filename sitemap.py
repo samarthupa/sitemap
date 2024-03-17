@@ -6,25 +6,22 @@ from io import BytesIO
 from fake_useragent import UserAgent
 
 # Function to check status code and redirection of URL
-def check_status_and_redirection(url, user_agent, max_redirections=7):
+def check_status_and_redirection(url, user_agent):
     try:
         headers = {"User-Agent": user_agent}
         response = requests.get(url, headers=headers, allow_redirects=False)
         status_code = response.status_code
         redirection_urls = []
-        count = 0
-        while status_code in [301, 307, 302]:
-            if count >= max_redirections:
-                st.warning(f"URL '{url}' exceeded maximum redirection limit of {max_redirections}.")
-                return status_code, redirection_urls
-            if response.url in redirection_urls:  # Check for redirect loop
-                st.warning(f"URL '{url}' is caught in a redirect loop and will not be processed further.")
-                return status_code, redirection_urls
-            redirection_urls.append(response.url)
-            response = requests.get(response.headers['location'], headers=headers, allow_redirects=False)
-            status_code = response.status_code
-            count += 1
-        return status_code, redirection_urls
+        max_redirections = 7  # Maximum number of redirections to follow
+        redirection_count = 0
+        if status_code in [301, 307, 302]:
+            while 'location' in response.headers:
+                redirection_count += 1
+                if redirection_count > max_redirections:
+                    break
+                redirection_urls.append(response.headers['location'])
+                response = requests.get(response.headers['location'], headers=headers, allow_redirects=False)
+        return status_code, redirection_urls[:max_redirections]  # Return up to 7 redirection URLs
     except Exception as e:
         return str(e), "N/A"
 
