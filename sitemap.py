@@ -85,9 +85,8 @@ if st.button("Submit"):
 
         for url, status_code, final_destination in final_destinations:
             if status_code in [301, 302, 307]:
-                # Join all redirection URLs with the original URL
-                redirection_chain = ' -> '.join([url] + [redir_url for redir_url in results if redir_url[0] == url][0][2:])
-                fix_redirection_data.append((redirection_chain, final_destination))  # Remove status_code from data
+                redirection_urls = [url] + [r for r in results if r[0] == url][0][2:]  # Get all redirection URLs for original URL
+                fix_redirection_data.append((' -> '.join(redirection_urls), final_destination))  # Concatenate redirection URLs, add final destination
 
         # Create Excel file with two sheets
         excel_data = {'Redirections': main_data, 'Fix Redirections': fix_redirection_data}
