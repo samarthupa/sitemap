@@ -4,4 +4,3 @@ lxml
 beautifulsoup4
 xlsxwriter
 fake-useragent
-futures
