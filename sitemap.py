@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import csv
 import pandas as pd
 from io import BytesIO
 from fake_useragent import UserAgent
@@ -11,11 +12,16 @@ def check_status_and_redirection(url, user_agent):
         response = requests.get(url, headers=headers, allow_redirects=False)
         status_code = response.status_code
         redirection_urls = []
+        max_redirections = 7  # Maximum number of redirections to follow
+        redirection_count = 0
         if status_code in [301, 307, 302]:
             while 'location' in response.headers:
+                redirection_count += 1
+                if redirection_count > max_redirections:
+                    break
                 redirection_urls.append(response.headers['location'])
                 response = requests.get(response.headers['location'], headers=headers, allow_redirects=False)
-        return status_code, redirection_urls
+        return status_code, redirection_urls[:max_redirections]  # Return up to 7 redirection URLs
     except Exception as e:
         return str(e), "N/A"
 
@@ -31,13 +37,19 @@ user_agents = st.selectbox("Choose User Agent", ["Chrome", "Firefox", "Safari"])
 if st.button("Submit"):
     with st.spinner("Processing... It may take some time if there are many URLs."):
         ua = UserAgent()
-        selected_user_agent = getattr(ua, user_agents.lower())  # Get selected user agent
-        
+        selected_user_agent = ""
+        if user_agents == "Chrome":
+            selected_user_agent = ua.chrome
+        elif user_agents == "Firefox":
+            selected_user_agent = ua.firefox
+        elif user_agents == "Safari":
+            selected_user_agent = ua.safari
+
         urls_list = urls.split('\n')
         unique_urls = set()  # To store unique URLs
-        final_destination_mapping = {}  # Mapping from original URL to final destination URL
         results = []
         max_redirections = 0
+        final_destinations = []
         
         # Progress bar
         progress_bar = st.progress(0)
@@ -57,20 +69,36 @@ if st.button("Submit"):
             max_redirections = max(max_redirections, len(redirection_urls))
             results.append((url, status_code, *redirection_urls))
             final_destination = redirection_urls[-1] if redirection_urls else url
-            final_destination_mapping[url] = final_destination
+            final_destinations.append((url, status_code, final_destination))
         
-        # Prepare data for main sheet
+        # Prepare column headers for main sheet
         main_headers = ['URL', 'Status Code']
         for i in range(max_redirections):
             main_headers.append(f'Redirection URL {i+1}')
+
+        # Prepare data for main sheet
         main_data = [main_headers] + results
-        
+
         # Prepare data for fix redirection sheet
-        fix_redirection_headers = ['Original URL', 'Final Destination URL']
+        fix_redirection_headers = ['Original URL', 'Status Code', 'Final Destination URL']
         fix_redirection_data = [fix_redirection_headers]
-        for original_url, final_destination in final_destination_mapping.items():
-            fix_redirection_data.append((original_url, final_destination))
-        
+
+        # Create a dictionary to map each intermediate URL to the final destination URL
+        intermediate_to_final = {}
+        for url, status_code, final_destination in final_destinations:
+            if status_code in [301, 302, 307]:
+                for i in range(len(redirection_urls) - 1):
+                    intermediate_to_final[redirection_urls[i]] = final_destination
+
+        for url, status_code, final_destination in final_destinations:
+            if status_code in [301, 302, 307]:
+                if url in intermediate_to_final:
+                    # If the URL is an intermediate URL, get its final destination from the dictionary
+                    fix_redirection_data.append((url, status_code, intermediate_to_final[url]))
+                else:
+                    # If the URL is not an intermediate URL, use the final destination URL
+                    fix_redirection_data.append((url, status_code, final_destination))
+
         # Create Excel file with two sheets
         excel_data = {'Redirections': main_data, 'Fix Redirections': fix_redirection_data}
         excel_file = BytesIO()
@@ -80,10 +108,10 @@ if st.button("Submit"):
             df.to_excel(excel_writer, index=False, sheet_name=sheet_name, header=False)
         excel_writer.close()  # Close the writer
         excel_file.seek(0)
-        
+
         # Display results in table
         st.table(main_data)
-        
+
         # Download button for Excel file
         st.download_button(
             label="Download and Fix Redirection",
