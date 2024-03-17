@@ -85,7 +85,8 @@ if st.button("Submit"):
 
         for url, status_code, final_destination in final_destinations:
             if status_code in [301, 302, 307]:
-                fix_redirection_data.append((url, status_code, final_destination))
+                for redirect_url in final_destination:
+                    fix_redirection_data.append((url, status_code, redirect_url))
 
         # Create Excel file with two sheets
         excel_data = {'Redirections': main_data, 'Fix Redirections': fix_redirection_data}
