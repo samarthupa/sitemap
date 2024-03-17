@@ -81,30 +81,35 @@ def index():
                 # Prepare data for main sheet
                 main_data = [main_headers] + results
 
-                # Prepare data for fix redirection sheet
-                fix_redirection_headers = ['Original URL', 'Final Destination URL']
-                fix_redirection_data = [fix_redirection_headers] + final_destinations
+              # Prepare data for fix redirection sheet
+fix_redirection_headers = ['Original URL', 'Final Destination URL']
+fix_redirection_data = [fix_redirection_headers]
 
-                # Create Excel file with two sheets
-                excel_data = {'Redirections': main_data, 'Fix Redirections': fix_redirection_data}
-                excel_file = BytesIO()
-                excel_writer = pd.ExcelWriter(excel_file, engine='xlsxwriter')
-                for sheet_name, sheet_data in excel_data.items():
-                    df = pd.DataFrame(sheet_data)
-                    df.to_excel(excel_writer, index=False, sheet_name=sheet_name, header=False)
-                excel_writer.close()  # Close the writer
-                excel_file.seek(0)
+for url, status_code, final_destination in final_destinations:
+    if status_code in [301, 302, 307]:
+        fix_redirection_data.append((url, final_destination))
 
-                # Display results in table
-                st.table(main_data)
+# Create Excel file with two sheets
+excel_data = {'Redirections': main_data, 'Fix Redirections': fix_redirection_data}
+excel_file = BytesIO()
+excel_writer = pd.ExcelWriter(excel_file, engine='xlsxwriter')
+for sheet_name, sheet_data in excel_data.items():
+    df = pd.DataFrame(sheet_data)
+    df.to_excel(excel_writer, index=False, sheet_name=sheet_name, header=False)
+excel_writer.close()  # Close the writer
+excel_file.seek(0)
 
-                # Download button for Excel file
-                st.download_button(
-                    label="Download and Fix Redirection",
-                    data=excel_file,
-                    file_name="check_and_fix_redirections.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
+# Display results in table
+st.table(main_data)
+
+# Download button for Excel file
+st.download_button(
+    label="Download and Fix Redirection",
+    data=excel_file,
+    file_name="check_and_fix_redirections.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
+
 
         return st
 
