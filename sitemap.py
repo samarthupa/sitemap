@@ -4,13 +4,13 @@ import csv
 import pandas as pd
 from io import BytesIO
 from fake_useragent import UserAgent
-import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 
 # Function to check status code and redirection of URL
 def check_status_and_redirection(url, user_agent):
     try:
         headers = {"User-Agent": user_agent}
-        response = requests.get(url, headers=headers, allow_redirects=False, timeout=2)  # Timeout set to 2 seconds
+        response = requests.get(url, headers=headers, allow_redirects=False)
         status_code = response.status_code
         redirection_urls = []
         max_redirections = 7  # Maximum number of redirections to follow
@@ -21,7 +21,7 @@ def check_status_and_redirection(url, user_agent):
                 if redirection_count > max_redirections:
                     break
                 redirection_urls.append(response.headers['location'])
-                response = requests.get(response.headers['location'], headers=headers, allow_redirects=False, timeout=2)
+                response = requests.get(response.headers['location'], headers=headers, allow_redirects=False)
         return status_code, redirection_urls[:max_redirections]  # Return up to 7 redirection URLs
     except Exception as e:
         return str(e), "N/A"
@@ -52,34 +52,31 @@ if st.button("Submit"):
         max_redirections = 0
         final_destinations = []
         
-        # Process URLs concurrently
-        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-            futures = []
-            for url in urls_list:
+        # Progress bar
+        progress_bar = st.progress(0)
+        
+        def process_url(url):
+            try:
                 if url.strip() == '':  # Skip processing if the row is blank
-                    continue
-                
+                    return
+            
                 # Check if the URL is already processed
                 if url in unique_urls:
-                    continue
+                    return
                 unique_urls.add(url)
-                
-                futures.append(executor.submit(check_status_and_redirection, url, selected_user_agent))
 
-            # Progress bar
-            progress_bar = st.progress(0)
-            for i, future in enumerate(concurrent.futures.as_completed(futures)):
+                status_code, redirection_urls = check_status_and_redirection(url, selected_user_agent)
+                max_redirections = max(max_redirections, len(redirection_urls))
+                results.append((url, status_code, *redirection_urls))
+                final_destination = redirection_urls[-1] if redirection_urls else url
+                final_destinations.append((url, status_code, final_destination))
+            except Exception as e:
+                st.write(f"Error processing URL '{url}': {str(e)}")
+
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            for i, _ in enumerate(executor.map(process_url, urls_list)):
                 progress_percent = (i + 1) / len(urls_list)
                 progress_bar.progress(progress_percent)
-                
-                try:
-                    status_code, redirection_urls = future.result()
-                    max_redirections = max(max_redirections, len(redirection_urls))
-                    results.append((url, status_code, *redirection_urls))
-                    final_destination = redirection_urls[-1] if redirection_urls else url
-                    final_destinations.append((url, status_code, final_destination))
-                except Exception as e:
-                    results.append((url, str(e), "N/A"))
 
         # Prepare column headers for main sheet
         main_headers = ['URL', 'Status Code']
