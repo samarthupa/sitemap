@@ -6,17 +6,23 @@ from io import BytesIO
 from fake_useragent import UserAgent
 
 # Function to check status code and redirection of URL
-def check_status_and_redirection(url, user_agent):
+def check_status_and_redirection(url, user_agent, max_redirections=7):
     try:
         headers = {"User-Agent": user_agent}
         response = requests.get(url, headers=headers, allow_redirects=False)
         status_code = response.status_code
         redirection_urls = []
-        if status_code in [301, 307, 302]:
-            while 'location' in response.headers:
-                redirection_urls.append(response.headers['location'])
-                response = requests.get(response.headers['location'], headers=headers, allow_redirects=False)
-        return status_code, redirection_urls
+        redirection_urls_set = set()  # To detect redirection loops
+        while status_code in [301, 302, 307] and len(redirection_urls) < max_redirections:
+            if response.url in redirection_urls_set:
+                # If redirection loop detected, break the loop
+                st.warning(f"Redirection loop detected for URL: {url}. Stopping redirections.")
+                break
+            redirection_urls_set.add(response.url)
+            redirection_urls.append(response.url)
+            response = requests.get(response.headers['location'], headers=headers, allow_redirects=False)
+            status_code = response.status_code
+        return status_code, redirection_urls[:max_redirections]
     except Exception as e:
         return str(e), "N/A"
 
