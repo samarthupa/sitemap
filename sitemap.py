@@ -44,13 +44,20 @@ if st.button("Submit"):
         results = []
         max_redirections = 0
         final_destinations = []
-        processed_urls = set()  # To store processed URLs
+        processed_urls = set()  # To keep track of processed URLs
         
         # Progress bar
         progress_bar = st.progress(0)
         for i, url in enumerate(urls_list):
-            if url.strip() == '' or url in processed_urls:  # Skip processing if the row is blank or URL is already processed
+            if url.strip() == '':  # Skip processing if the row is blank
                 continue
+            
+            # Check if the URL has already been processed
+            if url in processed_urls:
+                # Replace the duplicate URL with a placeholder
+                url = f"Duplicate of: {url}"
+            
+            processed_urls.add(url)  # Add the URL to the set of processed URLs
             
             progress_percent = (i + 1) / len(urls_list)
             progress_bar.progress(progress_percent)
@@ -60,8 +67,6 @@ if st.button("Submit"):
             results.append((url, status_code, *redirection_urls))
             final_destination = redirection_urls[-1] if redirection_urls else url
             final_destinations.append((url, status_code, final_destination))
-            
-            processed_urls.add(url)  # Add processed URL to set
         
         # Prepare column headers for main sheet
         main_headers = ['URL', 'Status Code']
