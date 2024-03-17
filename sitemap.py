@@ -4,7 +4,6 @@ import csv
 import pandas as pd
 from io import BytesIO
 from fake_useragent import UserAgent
-import concurrent.futures
 
 # Function to check status code and redirection of URL
 def check_status_and_redirection(url, user_agent):
@@ -51,26 +50,27 @@ if st.button("Submit"):
         results = []
         max_redirections = 0
         final_destinations = []
-
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            # Process URLs concurrently
-            futures = {executor.submit(check_status_and_redirection, url.strip(), selected_user_agent): url.strip() for url in urls_list if url.strip()}
-
-            # Progress bar
-            progress_bar = st.progress(0)
-            for i, future in enumerate(concurrent.futures.as_completed(futures)):
-                url = futures[future]
-                progress_percent = (i + 1) / len(urls_list)
-                progress_bar.progress(progress_percent)
-                try:
-                    status_code, redirection_urls = future.result()
-                    max_redirections = max(max_redirections, len(redirection_urls))
-                    results.append((url, status_code, *redirection_urls))
-                    final_destination = redirection_urls[-1] if redirection_urls else url
-                    final_destinations.append((url, status_code, final_destination))
-                except Exception as e:
-                    results.append((url, str(e), "N/A"))
-
+        
+        # Progress bar
+        progress_bar = st.progress(0)
+        for i, url in enumerate(urls_list):
+            if url.strip() == '':  # Skip processing if the row is blank
+                continue
+            
+            # Check if the URL is already processed
+            if url in unique_urls:
+                continue
+            unique_urls.add(url)
+            
+            progress_percent = (i + 1) / len(urls_list)
+            progress_bar.progress(progress_percent)
+            
+            status_code, redirection_urls = check_status_and_redirection(url, selected_user_agent)
+            max_redirections = max(max_redirections, len(redirection_urls))
+            results.append((url, status_code, *redirection_urls))
+            final_destination = redirection_urls[-1] if redirection_urls else url
+            final_destinations.append((url, status_code, final_destination))
+        
         # Prepare column headers for main sheet
         main_headers = ['URL', 'Status Code']
         for i in range(max_redirections):
