@@ -50,7 +50,6 @@ if st.button("Submit"):
         results = []
         max_redirections = 0
         final_destinations = []
-        fix_redirection_data = [['Original URL', 'Final Destination URL']]  # Initialize fix redirection data
         
         # Progress bar
         progress_bar = st.progress(0)
@@ -68,21 +67,23 @@ if st.button("Submit"):
             
             status_code, redirection_urls = check_status_and_redirection(url, selected_user_agent)
             max_redirections = max(max_redirections, len(redirection_urls))
-            results.append((url, status_code, *redirection_urls))
+            results.append((url, status_code, redirection_urls))
             final_destination = redirection_urls[-1] if redirection_urls else url
             final_destinations.append((url, status_code, final_destination))
-            
-            # Add all redirection URLs and their final destination to fix redirection data
-            for redirect_url in redirection_urls:
-                fix_redirection_data.append([redirect_url, final_destination])
         
-        # Prepare column headers for main sheet
+        # Prepare data for main sheet
         main_headers = ['URL', 'Status Code']
         for i in range(max_redirections):
             main_headers.append(f'Redirection URL {i+1}')
+        main_data = [main_headers] + [(url, status_code, *redirection_urls) for url, status_code, redirection_urls in results]
 
-        # Prepare data for main sheet
-        main_data = [main_headers] + results
+        # Prepare data for fix redirection sheet
+        fix_redirection_headers = ['Redirected URL', 'Final Destination URL']  # Change 'Original URL' to 'Redirected URL'
+        fix_redirection_data = [fix_redirection_headers]
+        for url, status_code, redirection_urls in results:
+            for i in range(len(redirection_urls)):
+                if status_code in [301, 302, 307]:
+                    fix_redirection_data.append((redirection_urls[i], redirection_urls[-1]))  # Include all redirecting URLs and final destination
 
         # Create Excel file with two sheets
         excel_data = {'Redirections': main_data, 'Fix Redirections': fix_redirection_data}
