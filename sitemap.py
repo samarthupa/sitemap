@@ -87,7 +87,7 @@ if st.button("Submit"):
 
         # Download button for Excel file
         st.download_button(
-            label="Download Excel",
+            label="Download and Fix Redirection",
             data=excel_file,
             file_name="check_and_fix_redirections.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
