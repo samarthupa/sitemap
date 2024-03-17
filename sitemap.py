@@ -41,10 +41,10 @@ if st.button("Submit"):
             selected_user_agent = ua.safari
 
         urls_list = urls.split('\n')
+        unique_urls = set()  # To store unique URLs
         results = []
         max_redirections = 0
         final_destinations = []
-        processed_urls = set()  # To keep track of processed URLs
         
         # Progress bar
         progress_bar = st.progress(0)
@@ -52,12 +52,10 @@ if st.button("Submit"):
             if url.strip() == '':  # Skip processing if the row is blank
                 continue
             
-            # Check if the URL has already been processed
-            if url in processed_urls:
-                # Replace the duplicate URL with a placeholder
-                url = f"Duplicate of: {url}"
-            
-            processed_urls.add(url)  # Add the URL to the set of processed URLs
+            # Check if the URL is already processed
+            if url in unique_urls:
+                continue
+            unique_urls.add(url)
             
             progress_percent = (i + 1) / len(urls_list)
             progress_bar.progress(progress_percent)
