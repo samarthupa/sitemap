@@ -50,6 +50,7 @@ if st.button("Submit"):
         results = []
         max_redirections = 0
         final_destinations = []
+        fix_redirection_data = []  # Data for "Fix Redirections" sheet
         
         # Progress bar
         progress_bar = st.progress(0)
@@ -70,6 +71,11 @@ if st.button("Submit"):
             results.append((url, status_code, *redirection_urls))
             final_destination = redirection_urls[-1] if redirection_urls else url
             final_destinations.append((url, status_code, final_destination))
+            
+            # Generate entries for "Fix Redirections" sheet
+            if redirection_urls:
+                for redirect_url in redirection_urls[:-1]:  # Exclude last URL as it's the final destination
+                    fix_redirection_data.append((url, redirect_url))
         
         # Prepare column headers for main sheet
         main_headers = ['URL', 'Status Code']
@@ -78,26 +84,6 @@ if st.button("Submit"):
 
         # Prepare data for main sheet
         main_data = [main_headers] + results
-
-        # Prepare data for fix redirection sheet
-        fix_redirection_headers = ['Original URL', 'Status Code', 'Final Destination URL']
-        fix_redirection_data = [fix_redirection_headers]
-
-        # Create a dictionary to map each intermediate URL to the final destination URL
-        intermediate_to_final = {}
-        for url, status_code, final_destination in final_destinations:
-            if status_code in [301, 302, 307]:
-                for i in range(len(redirection_urls) - 1):
-                    intermediate_to_final[redirection_urls[i]] = final_destination
-
-        for url, status_code, final_destination in final_destinations:
-            if status_code in [301, 302, 307]:
-                if url in intermediate_to_final:
-                    # If the URL is an intermediate URL, get its final destination from the dictionary
-                    fix_redirection_data.append((url, status_code, intermediate_to_final[url]))
-                else:
-                    # If the URL is not an intermediate URL, use the final destination URL
-                    fix_redirection_data.append((url, status_code, final_destination))
 
         # Create Excel file with two sheets
         excel_data = {'Redirections': main_data, 'Fix Redirections': fix_redirection_data}
