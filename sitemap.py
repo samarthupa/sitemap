@@ -12,13 +12,28 @@ def check_status_and_redirection(url, user_agent):
         response = requests.get(url, headers=headers, allow_redirects=False)
         status_code = response.status_code
         redirection_urls = []
-        if status_code in [301, 307, 302]:
-            while 'location' in response.headers:
-                redirection_urls.append(response.headers['location'])
-                response = requests.get(response.headers['location'], headers=headers, allow_redirects=False)
-        return status_code, redirection_urls
+        redirection_count = 0
+        loop_detected = False
+
+        while status_code in [301, 307, 302] and redirection_count < 10:
+            redirection_count += 1
+            if 'location' in response.headers:
+                next_url = response.headers['location']
+                redirection_urls.append(next_url)
+                
+                # Check for redirection loop
+                if next_url in redirection_urls[:-1]:
+                    loop_detected = True
+                    break
+                
+                response = requests.get(next_url, headers=headers, allow_redirects=False)
+                status_code = response.status_code
+            else:
+                break
+
+        return status_code, redirection_urls, loop_detected
     except Exception as e:
-        return str(e), "N/A"
+        return str(e), "N/A", False
 
 # Streamlit UI
 st.set_page_config(layout="wide")
@@ -60,8 +75,16 @@ if st.button("Submit"):
             progress_percent = (i + 1) / len(urls_list)
             progress_bar.progress(progress_percent)
             
-            status_code, redirection_urls = check_status_and_redirection(url, selected_user_agent)
+            status_code, redirection_urls, loop_detected = check_status_and_redirection(url, selected_user_agent)
             max_redirections = max(max_redirections, len(redirection_urls))
+            
+            # Limit to 10 redirections
+            if len(redirection_urls) >= 10:
+                redirection_urls = redirection_urls[:10]
+            
+            if loop_detected:
+                redirection_urls.append("Redirection Loop Detected")
+
             results.append((url, status_code, *redirection_urls))
             final_destination = redirection_urls[-1] if redirection_urls else url
             final_destinations.append((url, status_code, final_destination))
@@ -79,7 +102,7 @@ if st.button("Submit"):
         fix_redirection_data = [fix_redirection_headers]
 
         for url, status_code, final_destination in final_destinations:
-            if status_code in [301, 302, 307]:
+            if status_code in [301, 302, 307] and not loop_detected:
                 fix_redirection_data.append((url, status_code, final_destination))
 
         # Create Excel file with two sheets
