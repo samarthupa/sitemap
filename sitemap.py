@@ -4,12 +4,13 @@ import csv
 import pandas as pd
 from io import BytesIO
 from fake_useragent import UserAgent
+import concurrent.futures
 
 # Function to check status code and redirection of URL
 def check_status_and_redirection(url, user_agent):
     try:
         headers = {"User-Agent": user_agent}
-        response = requests.get(url, headers=headers, allow_redirects=False)
+        response = requests.get(url, headers=headers, allow_redirects=False, timeout=2)  # Timeout set to 2 seconds
         status_code = response.status_code
         redirection_urls = []
         max_redirections = 7  # Maximum number of redirections to follow
@@ -20,7 +21,7 @@ def check_status_and_redirection(url, user_agent):
                 if redirection_count > max_redirections:
                     break
                 redirection_urls.append(response.headers['location'])
-                response = requests.get(response.headers['location'], headers=headers, allow_redirects=False)
+                response = requests.get(response.headers['location'], headers=headers, allow_redirects=False, timeout=2)
         return status_code, redirection_urls[:max_redirections]  # Return up to 7 redirection URLs
     except Exception as e:
         return str(e), "N/A"
@@ -50,33 +51,36 @@ if st.button("Submit"):
         results = []
         max_redirections = 0
         final_destinations = []
-        fix_redirection_data = []  # Data for "Fix Redirections" sheet
         
-        # Progress bar
-        progress_bar = st.progress(0)
-        for i, url in enumerate(urls_list):
-            if url.strip() == '':  # Skip processing if the row is blank
-                continue
-            
-            # Check if the URL is already processed
-            if url in unique_urls:
-                continue
-            unique_urls.add(url)
-            
-            progress_percent = (i + 1) / len(urls_list)
-            progress_bar.progress(progress_percent)
-            
-            status_code, redirection_urls = check_status_and_redirection(url, selected_user_agent)
-            max_redirections = max(max_redirections, len(redirection_urls))
-            results.append((url, status_code, *redirection_urls))
-            final_destination = redirection_urls[-1] if redirection_urls else url
-            final_destinations.append((url, status_code, final_destination))
-            
-            # Generate entries for "Fix Redirections" sheet
-            if redirection_urls:
-                for redirect_url in redirection_urls[:-1]:  # Exclude last URL as it's the final destination
-                    fix_redirection_data.append((url, redirect_url))
-        
+        # Process URLs concurrently
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            futures = []
+            for url in urls_list:
+                if url.strip() == '':  # Skip processing if the row is blank
+                    continue
+                
+                # Check if the URL is already processed
+                if url in unique_urls:
+                    continue
+                unique_urls.add(url)
+                
+                futures.append(executor.submit(check_status_and_redirection, url, selected_user_agent))
+
+            # Progress bar
+            progress_bar = st.progress(0)
+            for i, future in enumerate(concurrent.futures.as_completed(futures)):
+                progress_percent = (i + 1) / len(urls_list)
+                progress_bar.progress(progress_percent)
+                
+                try:
+                    status_code, redirection_urls = future.result()
+                    max_redirections = max(max_redirections, len(redirection_urls))
+                    results.append((url, status_code, *redirection_urls))
+                    final_destination = redirection_urls[-1] if redirection_urls else url
+                    final_destinations.append((url, status_code, final_destination))
+                except Exception as e:
+                    results.append((url, str(e), "N/A"))
+
         # Prepare column headers for main sheet
         main_headers = ['URL', 'Status Code']
         for i in range(max_redirections):
@@ -84,6 +88,14 @@ if st.button("Submit"):
 
         # Prepare data for main sheet
         main_data = [main_headers] + results
+
+        # Prepare data for fix redirection sheet
+        fix_redirection_headers = ['Original URL', 'Status Code', 'Final Destination URL']
+        fix_redirection_data = [fix_redirection_headers]
+
+        for url, status_code, final_destination in final_destinations:
+            if status_code in [301, 302, 307]:
+                fix_redirection_data.append((url, status_code, final_destination))
 
         # Create Excel file with two sheets
         excel_data = {'Redirections': main_data, 'Fix Redirections': fix_redirection_data}
