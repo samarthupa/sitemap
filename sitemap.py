@@ -1,27 +1,25 @@
 import streamlit as st
-import requests
+import asyncio
+import aiohttp
 import csv
 import pandas as pd
 from io import BytesIO
 from fake_useragent import UserAgent
 
 # Function to check status code and redirection of URL
-def check_status_and_redirection(url, user_agent):
+async def check_status_and_redirection(url, user_agent):
     try:
         headers = {"User-Agent": user_agent}
-        response = requests.get(url, headers=headers, allow_redirects=False)
-        status_code = response.status_code
-        redirection_urls = []
-        max_redirections = 7  # Maximum number of redirections to follow
-        redirection_count = 0
-        if status_code in [301, 307, 302]:
-            while 'location' in response.headers:
-                redirection_count += 1
-                if redirection_count > max_redirections:
-                    break
-                redirection_urls.append(response.headers['location'])
-                response = requests.get(response.headers['location'], headers=headers, allow_redirects=False)
-        return status_code, redirection_urls[:max_redirections]  # Return up to 7 redirection URLs
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers, allow_redirects=False) as response:
+                status_code = response.status
+                redirection_urls = []
+                if status_code in [301, 307, 302]:
+                    while 'location' in response.headers:
+                        redirection_urls.append(response.headers['location'])
+                        async with session.get(response.headers['location'], headers=headers, allow_redirects=False) as next_response:
+                            response = next_response
+                return status_code, redirection_urls
     except Exception as e:
         return str(e), "N/A"
 
@@ -47,7 +45,7 @@ if st.button("Submit"):
 
         urls_list = urls.split('\n')
         unique_urls = set()  # To store unique URLs
-        results = []
+        tasks = []
         max_redirections = 0
         final_destinations = []
         
@@ -65,12 +63,17 @@ if st.button("Submit"):
             progress_percent = (i + 1) / len(urls_list)
             progress_bar.progress(progress_percent)
             
-            status_code, redirection_urls = check_status_and_redirection(url, selected_user_agent)
+            tasks.append(check_status_and_redirection(url, selected_user_agent))
+
+        # Gather results from asynchronous tasks
+        results = await asyncio.gather(*tasks)
+
+        # Prepare data
+        for (url, status_code, *redirection_urls) in results:
             max_redirections = max(max_redirections, len(redirection_urls))
-            results.append((url, status_code, *redirection_urls))
             final_destination = redirection_urls[-1] if redirection_urls else url
             final_destinations.append((url, status_code, final_destination))
-        
+
         # Prepare column headers for main sheet
         main_headers = ['URL', 'Status Code']
         for i in range(max_redirections):
