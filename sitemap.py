@@ -44,6 +44,9 @@ if st.button("Submit"):
         results = []
         max_redirections = 0
         final_destinations = []
+
+        # Use sets to store unique URLs
+        unique_urls = set()
         
         # Progress bar
         progress_bar = st.progress(0)
@@ -51,6 +54,9 @@ if st.button("Submit"):
             if url.strip() == '':  # Skip processing if the row is blank
                 continue
             
+            # Add URL to unique set
+            unique_urls.add(url.strip())
+
             progress_percent = (i + 1) / len(urls_list)
             progress_bar.progress(progress_percent)
             
@@ -65,18 +71,12 @@ if st.button("Submit"):
         for i in range(max_redirections):
             main_headers.append(f'Redirection URL {i+1}')
 
-        # Prepare data for main sheet
-        main_data = [main_headers] + results
+        # Prepare data for main sheet, remove duplicates
+        main_data = [main_headers] + list(set(results))
 
-        # Prepare data for fix redirection sheet
+        # Prepare data for fix redirection sheet, remove duplicates
         fix_redirection_headers = ['Original URL', 'Status Code', 'Final Destination URL']
-        fix_redirection_data = [fix_redirection_headers]
-        unique_urls = set()  # To keep track of unique URLs
-
-        for url, status_code, final_destination in final_destinations:
-            if status_code in [301, 302, 307] and url not in unique_urls:
-                fix_redirection_data.append((url, status_code, final_destination))
-                unique_urls.add(url)
+        fix_redirection_data = [fix_redirection_headers] + list(set(final_destinations))
 
         # Create Excel file with two sheets
         excel_data = {'Redirections': main_data, 'Fix Redirections': fix_redirection_data}
