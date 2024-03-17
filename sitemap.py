@@ -50,10 +50,7 @@ if st.button("Submit"):
         results = []
         max_redirections = 0
         final_destinations = []
-
-        # Data for fixing redirections
-        fix_redirection_data = []
-
+        
         # Progress bar
         progress_bar = st.progress(0)
         for i, url in enumerate(urls_list):
@@ -73,10 +70,6 @@ if st.button("Submit"):
             results.append((url, status_code, *redirection_urls))
             final_destination = redirection_urls[-1] if redirection_urls else url
             final_destinations.append((url, status_code, final_destination))
-
-            # For fixing redirections
-            for redirect_url in redirection_urls[:-1]:
-                fix_redirection_data.append((url, redirect_url))
         
         # Prepare column headers for main sheet
         main_headers = ['URL', 'Status Code']
@@ -85,6 +78,16 @@ if st.button("Submit"):
 
         # Prepare data for main sheet
         main_data = [main_headers] + results
+
+        # Prepare data for fix redirection sheet
+        fix_redirection_headers = ['Original URL', 'Final Destination URL']  # Remove 'Status Code' from headers
+        fix_redirection_data = [fix_redirection_headers]
+
+        for url, status_code, final_destination in final_destinations:
+            if status_code in [301, 302, 307]:
+                # Join all redirection URLs with the original URL
+                redirection_chain = ' -> '.join([url] + [redir_url for redir_url in results if redir_url[0] == url][0][2:])
+                fix_redirection_data.append((redirection_chain, final_destination))  # Remove status_code from data
 
         # Create Excel file with two sheets
         excel_data = {'Redirections': main_data, 'Fix Redirections': fix_redirection_data}
