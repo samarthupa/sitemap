@@ -83,18 +83,11 @@ if st.button("Submit"):
         fix_redirection_headers = ['Original URL', 'Final Destination URL']
         fix_redirection_data = [fix_redirection_headers]
 
-        # Count occurrences of each URL
-        url_counts = {}
-        for row in results:
-            original_url = row[0]
-            url_counts[original_url] = url_counts.get(original_url, 0) + 1
-
-        # Filter out rows with URLs appearing more than once
         for url, status_code, *redirection_urls in results:
             if status_code in [301, 302, 307]:
                 original_urls = [url] + [redirect_url for redirect_url in redirection_urls if redirect_url]
                 final_destination = redirection_urls[-1] if redirection_urls else url
-                fix_redirection_data.extend([(original_url, final_destination) for original_url in original_urls if url_counts.get(original_url, 0) == 1])
+                fix_redirection_data.extend([(original_url, final_destination) for original_url in original_urls])
 
         # Remove rows where Original URL and Final Destination URL are the same
         fix_redirection_data = [row for row in fix_redirection_data if row[0] != row[1]]
