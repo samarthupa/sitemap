@@ -35,7 +35,7 @@ urls = st.text_area("Enter URL(s) (one URL per line)", height=150)
 user_agents = st.selectbox("Choose User Agent", ["Chrome", "Firefox", "Safari"])
 
 if st.button("Submit"):
-    with st.spinner("Processing... It may take some time if there are many URLs or Redirections."):
+    with st.spinner("Processing... It may take some time if there are many URLs or Chain redirections."):
         ua = UserAgent()
         selected_user_agent = ""
         if user_agents == "Chrome":
