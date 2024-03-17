@@ -50,6 +50,7 @@ if st.button("Submit"):
         results = []
         max_redirections = 0
         final_destinations = []
+        fix_redirection_data = [['Original URL', 'Final Destination URL']]  # Initialize fix redirection data
         
         # Progress bar
         progress_bar = st.progress(0)
@@ -70,6 +71,10 @@ if st.button("Submit"):
             results.append((url, status_code, *redirection_urls))
             final_destination = redirection_urls[-1] if redirection_urls else url
             final_destinations.append((url, status_code, final_destination))
+            
+            # Add all redirection URLs and their final destination to fix redirection data
+            for redirect_url in redirection_urls:
+                fix_redirection_data.append([redirect_url, final_destination])
         
         # Prepare column headers for main sheet
         main_headers = ['URL', 'Status Code']
@@ -78,15 +83,6 @@ if st.button("Submit"):
 
         # Prepare data for main sheet
         main_data = [main_headers] + results
-
-        # Prepare data for fix redirection sheet
-        fix_redirection_headers = ['Original URL', 'Final Destination URL']
-        fix_redirection_data = [fix_redirection_headers]
-
-        for url, status_code, final_destination in final_destinations:
-            redirection_chain = [url] + [rd_url for rd_url in check_status_and_redirection(url, selected_user_agent)[1]]
-            for i in range(len(redirection_chain) - 1):
-                fix_redirection_data.append((redirection_chain[i], redirection_chain[i + 1]))
 
         # Create Excel file with two sheets
         excel_data = {'Redirections': main_data, 'Fix Redirections': fix_redirection_data}
