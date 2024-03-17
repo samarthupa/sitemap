@@ -1,25 +1,28 @@
 import streamlit as st
-import asyncio
-import aiohttp
+import requests
 import csv
 import pandas as pd
 from io import BytesIO
 from fake_useragent import UserAgent
+import concurrent.futures
 
 # Function to check status code and redirection of URL
-async def check_status_and_redirection(url, user_agent):
+def check_status_and_redirection(url, user_agent):
     try:
         headers = {"User-Agent": user_agent}
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, allow_redirects=False) as response:
-                status_code = response.status
-                redirection_urls = []
-                if status_code in [301, 307, 302]:
-                    while 'location' in response.headers:
-                        redirection_urls.append(response.headers['location'])
-                        async with session.get(response.headers['location'], headers=headers, allow_redirects=False) as next_response:
-                            response = next_response
-                return status_code, redirection_urls
+        response = requests.get(url, headers=headers, allow_redirects=False)
+        status_code = response.status_code
+        redirection_urls = []
+        max_redirections = 7  # Maximum number of redirections to follow
+        redirection_count = 0
+        if status_code in [301, 307, 302]:
+            while 'location' in response.headers:
+                redirection_count += 1
+                if redirection_count > max_redirections:
+                    break
+                redirection_urls.append(response.headers['location'])
+                response = requests.get(response.headers['location'], headers=headers, allow_redirects=False)
+        return status_code, redirection_urls[:max_redirections]  # Return up to 7 redirection URLs
     except Exception as e:
         return str(e), "N/A"
 
@@ -45,34 +48,28 @@ if st.button("Submit"):
 
         urls_list = urls.split('\n')
         unique_urls = set()  # To store unique URLs
-        tasks = []
+        results = []
         max_redirections = 0
         final_destinations = []
-        
-        # Progress bar
-        progress_bar = st.progress(0)
-        for i, url in enumerate(urls_list):
-            if url.strip() == '':  # Skip processing if the row is blank
-                continue
-            
-            # Check if the URL is already processed
-            if url in unique_urls:
-                continue
-            unique_urls.add(url)
-            
-            progress_percent = (i + 1) / len(urls_list)
-            progress_bar.progress(progress_percent)
-            
-            tasks.append(check_status_and_redirection(url, selected_user_agent))
 
-        # Gather results from asynchronous tasks
-        results = await asyncio.gather(*tasks)
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            # Process URLs concurrently
+            futures = {executor.submit(check_status_and_redirection, url.strip(), selected_user_agent): url.strip() for url in urls_list if url.strip()}
 
-        # Prepare data
-        for (url, status_code, *redirection_urls) in results:
-            max_redirections = max(max_redirections, len(redirection_urls))
-            final_destination = redirection_urls[-1] if redirection_urls else url
-            final_destinations.append((url, status_code, final_destination))
+            # Progress bar
+            progress_bar = st.progress(0)
+            for i, future in enumerate(concurrent.futures.as_completed(futures)):
+                url = futures[future]
+                progress_percent = (i + 1) / len(urls_list)
+                progress_bar.progress(progress_percent)
+                try:
+                    status_code, redirection_urls = future.result()
+                    max_redirections = max(max_redirections, len(redirection_urls))
+                    results.append((url, status_code, *redirection_urls))
+                    final_destination = redirection_urls[-1] if redirection_urls else url
+                    final_destinations.append((url, status_code, final_destination))
+                except Exception as e:
+                    results.append((url, str(e), "N/A"))
 
         # Prepare column headers for main sheet
         main_headers = ['URL', 'Status Code']
