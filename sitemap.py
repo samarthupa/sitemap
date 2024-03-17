@@ -12,17 +12,19 @@ def check_status_and_redirection(url, user_agent, max_redirections=7):
         response = requests.get(url, headers=headers, allow_redirects=False)
         status_code = response.status_code
         redirection_urls = []
-        redirection_urls_set = set()  # To detect redirection loops
-        while status_code in [301, 302, 307] and len(redirection_urls) < max_redirections:
-            if response.url in redirection_urls_set:
-                # If redirection loop detected, break the loop
-                st.warning(f"Redirection loop detected for URL: {url}. Stopping redirections.")
-                break
-            redirection_urls_set.add(response.url)
+        count = 0
+        while status_code in [301, 307, 302]:
+            if count >= max_redirections:
+                st.warning(f"URL '{url}' exceeded maximum redirection limit of {max_redirections}.")
+                return status_code, redirection_urls
+            if response.url in redirection_urls:  # Check for redirect loop
+                st.warning(f"URL '{url}' is caught in a redirect loop and will not be processed further.")
+                return status_code, redirection_urls
             redirection_urls.append(response.url)
             response = requests.get(response.headers['location'], headers=headers, allow_redirects=False)
             status_code = response.status_code
-        return status_code, redirection_urls[:max_redirections]
+            count += 1
+        return status_code, redirection_urls
     except Exception as e:
         return str(e), "N/A"
 
