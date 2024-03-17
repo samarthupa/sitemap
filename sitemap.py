@@ -87,7 +87,8 @@ if st.button("Submit"):
             if status_code in [301, 302, 307]:
                 original_urls = [url] + [redirect_url for redirect_url in redirection_urls if redirect_url]
                 final_destination = redirection_urls[-1] if redirection_urls else url
-                fix_redirection_data.extend([(original_url, final_destination) for original_url in original_urls if redirection_urls[1]])
+                fix_redirection_data.extend([(original_url, final_destination) for original_url in original_urls if len(redirection_urls) > 1 and redirection_urls[1]])
+
 
         # Remove rows where Original URL and Final Destination URL are the same
         fix_redirection_data = [row for row in fix_redirection_data if row[0] != row[1]]
