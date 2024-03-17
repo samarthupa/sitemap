@@ -35,7 +35,7 @@ urls = st.text_area("Enter URL(s) (one URL per line)", height=150)
 user_agents = st.selectbox("Choose User Agent", ["Chrome", "Firefox", "Safari"])
 
 if st.button("Submit"):
-    with st.spinner("Processing... It may take some time if there are many URLs."):
+    with st.spinner("Processing... It may take some time if there are many URLs or Redirections."):
         ua = UserAgent()
         selected_user_agent = ""
         if user_agents == "Chrome":
@@ -67,7 +67,8 @@ if st.button("Submit"):
             
             status_code, redirection_urls = check_status_and_redirection(url, selected_user_agent)
             max_redirections = max(max_redirections, len(redirection_urls))
-            results.append((url, status_code, *redirection_urls))
+            result = (url, status_code, *redirection_urls)
+            results.append(result)
             final_destination = redirection_urls[-1] if redirection_urls else url
             final_destinations.append((url, status_code, final_destination))
         
@@ -83,7 +84,10 @@ if st.button("Submit"):
         fix_redirection_headers = ['Original URL', 'Final Destination URL']
         fix_redirection_data = [fix_redirection_headers]
 
-        for url, status_code, redirection_urls in results:
+        for result in results:
+            url = result[0]
+            status_code = result[1]
+            redirection_urls = result[2:]
             if status_code in [301, 302, 307]:
                 for i in range(len(redirection_urls) - 1):  # Iterate through each redirecting URL
                     fix_redirection_data.append((redirection_urls[i], redirection_urls[-1]))  # Append the redirecting URL and final destination URL
