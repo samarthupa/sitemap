@@ -49,6 +49,7 @@ if st.button("Submit"):
         unique_urls = set()  # To store unique URLs
         results = []
         max_redirections = 0
+        final_destinations = []
         
         # Progress bar
         progress_bar = st.progress(0)
@@ -67,6 +68,8 @@ if st.button("Submit"):
             status_code, redirection_urls = check_status_and_redirection(url, selected_user_agent)
             max_redirections = max(max_redirections, len(redirection_urls))
             results.append((url, status_code, redirection_urls))
+            final_destination = redirection_urls[-1] if redirection_urls else url
+            final_destinations.append((url, status_code, final_destination))
         
         # Prepare column headers for main sheet
         main_headers = ['URL', 'Status Code']
@@ -74,16 +77,16 @@ if st.button("Submit"):
             main_headers.append(f'Redirection URL {i+1}')
 
         # Prepare data for main sheet
-        main_data = [main_headers] + [(url, status_code, *redirection_urls) for url, status_code, redirection_urls in results]
+        main_data = [main_headers] + results
 
         # Prepare data for fix redirection sheet
-        fix_redirection_headers = ['Original URL', 'Redirected URL', 'Final Destination URL']  # Update headers
+        fix_redirection_headers = ['Original URL', 'Redirected URL', 'Final Destination URL']  # Updated headers
         fix_redirection_data = [fix_redirection_headers]
 
         for url, status_code, redirection_urls in results:
-            if redirection_urls:  # Check if there are redirections for this URL
+            if status_code in [301, 302, 307]:
                 for redirected_url in redirection_urls:
-                    fix_redirection_data.append((url, redirected_url, redirection_urls[-1]))  # Store original URL, redirected URL, and final destination URL
+                    fix_redirection_data.append((url, redirected_url, redirection_urls[-1]))  # Append each redirected URL and its final destination
 
         # Create Excel file with two sheets
         excel_data = {'Redirections': main_data, 'Fix Redirections': fix_redirection_data}
