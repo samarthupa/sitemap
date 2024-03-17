@@ -80,13 +80,12 @@ if st.button("Submit"):
         main_data = [main_headers] + results
 
         # Prepare data for fix redirection sheet
-fix_redirection_headers = ['Original URL', 'Final Destination URL']  # Remove 'Status Code' from headers
-fix_redirection_data = [fix_redirection_headers]
+        fix_redirection_headers = ['Original URL', 'Final Destination URL']  # Remove 'Status Code' from headers
+        fix_redirection_data = [fix_redirection_headers]
 
-for url, status_code, final_destination in final_destinations:
-    if status_code in [301, 302, 307]:
-        fix_redirection_data.append((url, final_destination))  # Remove status_code from data
-
+        for url, status_code, final_destination in final_destinations:
+            if status_code in [301, 302, 307]:
+                fix_redirection_data.append((url, final_destination))  # Remove status_code from data
 
         # Create Excel file with two sheets
         excel_data = {'Redirections': main_data, 'Fix Redirections': fix_redirection_data}
