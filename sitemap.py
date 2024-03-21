@@ -51,9 +51,6 @@ if st.button("Submit"):
         max_redirections = 0
         final_destinations = []
         
-        # Placeholder for loading message
-        loading_placeholder = st.empty()
-
         # Progress bar
         progress_bar = st.progress(0)
         for i, url in enumerate(urls_list):
@@ -105,9 +102,6 @@ if st.button("Submit"):
             df.to_excel(excel_writer, index=False, sheet_name=sheet_name, header=False)
         excel_writer.close()  # Close the writer
         excel_file.seek(0)
-
-        # Hide loading message
-        loading_placeholder.empty()
 
         # Display results in table
         st.table(main_data)
